@@ -1,0 +1,13 @@
+.*
+__pycache__/
+*.py[cod]
+build/
+*.egg_info
+dist/
+
+!.gitattributes
+!.gitignore
+!.PROJINFO
+!.idea/dictionaries/eljef_docker.xml
+!docs/build/.gitignore
+!docs/source/_static/.gitignore

@@ -1,0 +1,104 @@
+# Specify capabilities to be added to the container.
+# This is a list of capabilities.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+cap_add:
+- NET_ADMIN
+
+# Drop capabilities from a container.
+# This is a list of capabilities.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# cap_drop:
+# -
+
+# Run the container in the background (daemonize)
+# Comment out if false.
+daemonize: true
+
+# Specify devices to be added to the container.
+# This is a list of devices.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# Device list should be presented the same way they would be presented to
+# docker run --device
+# ie:
+#   /dev/net/tun
+#   /dev/net/tun:/dev/net/tun
+devices:
+- /dev/net/tun
+
+# Specify custom DNS servers to be used by the container
+# This is a list of address.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+dns:
+- 8.8.4.4
+
+# Specify environment options to be added to the container
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# These should be specified the same way you would specify them to
+# docker run -e
+# ie:
+#     OPTION=value
+# environment:
+# -
+
+# The container group that this container will belong to.
+# This group must be added to eljef-docker before trying to add or run this
+# container or addition/startup will fail.
+group: containergroup
+
+# The image that the container will be running with.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# specified the same way you would specify it to docker run, including tags if
+# wanted.
+image: repo/image
+
+# A list of arguments to be sent to the running container. (The arguments that
+# are specified AFTER the image name.)
+# This should be filled out as you would fill in a Python list for to provide
+# to the subprocess module, one position per line.
+# ie:
+#    - --arg=value
+#    - -arg
+#    - value
+# image_args:
+# -
+
+# A list of volumes to add to the docker image
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# These should be specified teh same way they would specified to
+# docker run -v
+# ie:
+#    /path/on/host:/path/in/container
+#    /path/on/host:/path/in/container:rw
+# mounts:
+# -
+
+# Container name
+name: container_name
+
+# If your container will be sharing another containers network, specify
+# the container name that is sharing its connection here.
+# ie:
+#    If your container will be connecting through a container named VPN:
+#    net: VPN
+# net: container_name
+
+# If you container is connecting to a network that is not dockers default,
+# specify the network name here.
+# network: network_name
+
+# If you are exposing any ports, specify they here.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# The ports should be specified the same way they would be specified to
+# docker run -p
+# ie:
+#    8181:8181
+#    8181:8181/udp
+# ports:
+# -
+
+# Restart policy for the container.
+# https://docs.docker.com/engine/reference/commandline/run/#options
+# Same as to be specified to
+# docker run --restart
+# Comment out to disable.
+restart: always
