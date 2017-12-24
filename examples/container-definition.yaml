@@ -10,10 +10,6 @@ cap_add:
 # cap_drop:
 # -
 
-# Run the container in the background (daemonize)
-# Comment out if false.
-daemonize: true
-
 # Specify devices to be added to the container.
 # This is a list of devices.
 # https://docs.docker.com/engine/reference/commandline/run/#options
@@ -61,6 +57,17 @@ image: repo/image
 #    - value
 # image_args:
 # -
+
+# The image is being pulled from an insecure registry. (http://)
+# image_insecure: true
+
+# The username that is required to connect to the registry that holds the
+# image.
+# image_username: username
+
+# The password that is required to connect to the registry that holds the
+# image.
+# image_password: password
 
 # A list of volumes to add to the docker image
 # https://docs.docker.com/engine/reference/commandline/run/#options
