@@ -60,6 +60,7 @@ class DockerGroups(object):
     config_path: Path to base configuration directory.
     """
     def __init__(self, config_path) -> None:
+        fops.mkdir(os.path.abspath(config_path))
         self.__config = os.path.join(os.path.abspath(config_path),
                                      'groups.yaml')
         self.__groups = DictObj()
@@ -98,7 +99,7 @@ class DockerGroups(object):
             DockerError: If group is not defined.
         """
         if group not in self.__groups:
-            raise DockerError("Group {0!s} not defined.".format(group))
+            raise DockerError("Group '{0!s}' not defined.".format(group))
 
         return self.__groups[group]
 

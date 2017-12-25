@@ -25,6 +25,7 @@ import docker
 import logging
 import os
 
+from eljef.core import fops
 from eljef.core.check import version_check
 
 from eljef.docker.containers import DockerContainers
@@ -44,16 +45,16 @@ class Docker(object):
               be provided in [hostname/ip]:port format.
     """
     def __init__(self, config_path: str, host: str=None) -> None:
-        self.__client = self.__connect()
-        self.__config_path = os.path.abspath(config_path)
-        self.__host = host
+        fops.mkdir(os.path.abspath(config_path))
+        self.__client = self.__connect(host)
         self.groups = DockerGroups(config_path)
         self.containers = DockerContainers(self.__client, config_path,
                                            self.groups)
 
-    def __connect(self) -> docker.DockerClient:
+    @staticmethod
+    def __connect(host: str=None) -> docker.DockerClient:
         LOGGER.debug('Creating docker connection client.')
-        if not self.__host:
+        if not host:
             return docker.from_env()
         else:
-            return docker.DockerClient(base_url=self.__host)
+            return docker.DockerClient(base_url=host)

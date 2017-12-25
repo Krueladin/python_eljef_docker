@@ -256,6 +256,7 @@ class DockerContainers(object):
         self.__client = client
         self.__config_path = os.path.join(os.path.abspath(config_path),
                                           'containers')
+        fops.mkdir(self.__config_path)
         self.__containers = self.__list_defined()
         self.__groups = groups
 

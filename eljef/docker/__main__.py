@@ -27,6 +27,7 @@ import sys
 
 from eljef.core.check import version_check
 from eljef.docker.docker import Docker
+from eljef.docker.exceptions import DockerError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,17 +92,21 @@ def group_info(group_name: str) -> None:
         group_name: Group name to retrieve information for.
     """
     client = Docker(CONFIG_PATH)
-    group = client.groups.get(group_name)
+    try:
+        group = client.groups.get(group_name)
 
-    LOGGER.info("Group: {0!s}".format(group_name))
-    if group.master:
-        LOGGER.info("    Master: {0!s}".format(group.master))
-    if len(group.members) <= 0:
-        LOGGER.info("    Members: None Defined.")
-    else:
-        LOGGER.info("    Members:")
-        for member_name in sorted(group.members):
-            LOGGER.info("        {0!s}".format(member_name))
+        LOGGER.info("Group: {0!s}".format(group_name))
+        if group.master:
+            LOGGER.info("    Master: {0!s}".format(group.master))
+        if len(group.members) <= 0:
+            LOGGER.info("    Members: None Defined.")
+        else:
+            LOGGER.info("    Members:")
+            for member_name in sorted(group.members):
+                LOGGER.info("        {0!s}".format(member_name))
+
+    except DockerError as e:
+        LOGGER.error(e.message)
 
 
 def list_containers() -> None:
@@ -109,10 +114,12 @@ def list_containers() -> None:
     client = Docker(CONFIG_PATH)
     containers = client.containers.list()
 
-    LOGGER.info('Currently Defined Containers:')
-
-    for container in sorted(containers):
-        LOGGER.info("    {0!s}".format(container))
+    if len(containers) > 0:
+        LOGGER.info('Currently Defined Containers:')
+        for container in sorted(containers):
+            LOGGER.info("    {0!s}".format(container))
+    else:
+        LOGGER.info('No Currently Defined Containers')
 
 
 def list_groups() -> None:
@@ -120,10 +127,12 @@ def list_groups() -> None:
     client = Docker(CONFIG_PATH)
     groups = client.groups.list()
 
-    LOGGER.info('Currently Defined Groups:')
-
-    for group in groups:
-        LOGGER.info("    {0!s}".format(group))
+    if len(groups) > 0:
+        LOGGER.info('Currently Defined Groups:')
+        for group in groups:
+            LOGGER.info("    {0!s}".format(group))
+    else:
+        LOGGER.info('No Currently Defined Groups')
 
 
 def set_group_master(group_name: str, master_name: str) -> None:
@@ -221,7 +230,7 @@ def main() -> None:
 
     if args.define_container:
         define_container(args.define_container)
-    elif args.defin_group:
+    elif args.define_group:
         define_group(args.define_group)
     elif args.dump_container:
         dump_container(args.dump)
