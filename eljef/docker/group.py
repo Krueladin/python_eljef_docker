@@ -42,12 +42,12 @@ class DockerGroup(DictObj):
         super().__init__()
         self.master = None
         self.members = []
-        if 'master' in group_data:
+        if group_data and 'master' in group_data:
             if not isinstance(group_data['master'], str):
                 err_s = "'master' key in 'group_data' needs to be a str"
                 raise TypeError(err_s)
             self.master = group_data['master']
-        if 'members' in group_data:
+        if group_data and 'members' in group_data:
             if not isinstance(group_data['members'], list):
                 err_s = "'members' key in 'group_data' needs to be a list"
                 raise TypeError(err_s)

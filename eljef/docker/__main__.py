@@ -94,19 +94,19 @@ def group_info(group_name: str) -> None:
     client = Docker(CONFIG_PATH)
     try:
         group = client.groups.get(group_name)
-
-        LOGGER.info("Group: {0!s}".format(group_name))
-        if group.master:
-            LOGGER.info("    Master: {0!s}".format(group.master))
-        if len(group.members) <= 0:
-            LOGGER.info("    Members: None Defined.")
-        else:
-            LOGGER.info("    Members:")
-            for member_name in sorted(group.members):
-                LOGGER.info("        {0!s}".format(member_name))
-
     except DockerError as e:
         LOGGER.error(e.message)
+        raise SystemExit(-1)
+
+    LOGGER.info("Group: {0!s}".format(group_name))
+    if group.master:
+        LOGGER.info("    Master: {0!s}".format(group.master))
+    if len(group.members) <= 0:
+        LOGGER.info("    Members: None Defined.")
+    else:
+        LOGGER.info("    Members:")
+        for member_name in sorted(group.members):
+            LOGGER.info("        {0!s}".format(member_name))
 
 
 def list_containers() -> None:
@@ -183,6 +183,53 @@ def update_group(group_name: str) -> None:
     Args:
         group_name: Group name to update and rebuild.
     """
+    client = Docker(CONFIG_PATH)
+    try:
+        group = client.groups.get(group_name)
+    except DockerError as e:
+        LOGGER.error(e.message)
+        raise SystemExit(-1)
+
+    update_s = "Updating and rebuilding members of group '{0!s}'"
+    LOGGER.info(update_s.format(group_name))
+
+    master = None
+    if group.master:
+        master = client.containers.get(group.master)
+
+    containers = []
+    for container_name in client.containers.list():
+        if container_name != group.master:
+            containers.append(client.containers.get(container_name))
+
+    update_s = "Updating container image for '{0!s}'"
+    if master:
+        LOGGER.info(update_s.format(master.info.name))
+        master.image.pull()
+    for container in containers:
+        LOGGER.info(update_s.format(container.info.name))
+        container.image.pull()
+
+    update_s = "Shutting down and removing container '{0!s}'"
+    for container in containers:
+        LOGGER.info(update_s.format(container.info.name))
+        container.stop()
+        container.remove()
+    if master:
+        LOGGER.info(update_s.format(master.info.name))
+        master.stop()
+        master.remove()
+
+    update_s = "Starting new copy of container '{0!s}'"
+    if master:
+        LOGGER.info(update_s.format(master.inof.name))
+        master.start()
+    for container in containers:
+        LOGGER.info(update_s.format(container.info.name))
+        container.start()
+
+    update_s = "Finished updating and rebuilding members of group '{0!s}'"
+    LOGGER.info(update_s.format(group_name))
 
 
 def main() -> None:
