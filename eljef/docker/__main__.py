@@ -18,16 +18,21 @@
 
 The main script for ElJef Docker operations.
 """
-
-import argparse
 import logging
+import argparse
 import os
 import platform
-import sys
 
+from typing import List
+from typing import Tuple
+from typing import Union
+
+from eljef.core.applog import setup_app_logging
 from eljef.core.check import version_check
+from eljef.docker.containers import DockerContainer
 from eljef.docker.docker import Docker
 from eljef.docker.exceptions import DockerError
+from eljef.docker.group import DockerGroup
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +45,115 @@ else:
                                'docker')
 
 
-def define_container(definition_file: str) -> None:
+def _command_line_args() -> Tuple[argparse.Namespace, argparse.ArgumentParser]:
+    project_desc = 'ElJef Docker functionality'
+    parser = argparse.ArgumentParser(description=project_desc)
+    parser.add_argument('--container-define', dest='container_define',
+                        metavar='CONTAINER_DEFINITION.YAML',
+                        help='Define a new container using specified YAML '
+                             'definition file.')
+    parser.add_argument('--container-dump', dest='container_dump',
+                        metavar='CONTAINER_NAME',
+                        help='Dumps a containers definition file to the '
+                             'current directory.')
+    parser.add_argument('--container-start', dest='container_start',
+                        metavar='CONTAINER_NAME',
+                        help='Starts the defined container.')
+    parser.add_argument('--container-update', dest='container_update',
+                        metavar='CONTAINER_NAME',
+                        help='Update the specified containers image and '
+                             'rebuild the container.')
+    parser.add_argument('--containers-list', dest='containers_list',
+                        action='store_true',
+                        help='Returns a list of containers managed by the '
+                             'ElJef Docker software.')
+    parser.add_argument('--group-define', dest='group_define',
+                        metavar='GROUP_NAME',
+                        help='Define new container group.')
+    parser.add_argument('--group-info', dest='group_info',
+                        metavar='GROUP_NAME',
+                        help='Returns group information for the specified '
+                             'group.')
+    parser.add_argument('--group-set-master', dest='group_set_master',
+                        metavar='GROUP_NAME,MASTER_NAME',
+                        help='Sets the master for the specified group. '
+                             '(This must be comma separated '
+                             'group_name,master_name)')
+    parser.add_argument('--group-restart', dest='group_restart',
+                        metavar='GROUP_NAME',
+                        help='Restarts the specified group of containers.')
+    parser.add_argument('--group-start', dest='group_start',
+                        metavar='GROUP_NAME',
+                        help='Starts the specified group of containers.')
+    parser.add_argument('--group-stop', dest='group_stop',
+                        metavar='GROUP_NAME',
+                        help='Stops all containers in the specified group.')
+    parser.add_argument('--group-update', dest='group_update',
+                        metavar='GROUP_NAME',
+                        help='Update all containers in the specified group and'
+                             'rebuild them.')
+    parser.add_argument('--groups-list', dest='groups_list',
+                        action='store_true',
+                        help='Returns a list of currently defined groups.')
+    parser.add_argument('--debug', dest='debug_log', action='store_true',
+                        help='Enable debug output.')
+    return parser.parse_args(), parser
+
+
+def _group_get(client: Docker, group_name: str) -> DockerGroup:
+    try:
+        group = client.groups.get(group_name)
+        return group
+    except DockerError as e:
+        LOGGER.error(e.message)
+        raise SystemExit(-1)
+
+
+def _group_list(client: Docker,
+                group: DockerGroup) -> Tuple[DockerContainer,
+                                             List[DockerContainer]]:
+    master = None
+    if group.master:
+        master = client.containers.get(group.master)
+
+    containers = []
+    for container_name in group.members:
+        if container_name != group.master:
+            containers.append(client.containers.get(container_name))
+
+    return master, containers
+
+
+def _group_start(master: Union[DockerContainer, None],
+                 containers: List[DockerContainer]) -> None:
+    update_s = "Starting new copy of container '{0!s}'"
+    if master:
+        LOGGER.info(update_s.format(master.info.name))
+        master.start()
+    for container in containers:
+        LOGGER.info(update_s.format(container.info.name))
+        container.start()
+
+
+def _group_stop(master: Union[DockerContainer, None],
+                containers: List[DockerContainer],
+                remove: bool=False) -> None:
+    update_s = "Shutting down container '{0!s}'"
+    if remove:
+        update_s = "Shutting down and removing container '{0!s}'"
+    for container in containers:
+        LOGGER.info(update_s.format(container.info.name))
+        container.stop()
+        if remove:
+            container.remove()
+    if master:
+        LOGGER.info(update_s.format(master.info.name))
+        master.stop()
+        if remove:
+            master.remove()
+
+
+def container_define(definition_file: str) -> None:
     """Define a new container
 
     Args:
@@ -54,21 +167,7 @@ def define_container(definition_file: str) -> None:
     LOGGER.info("Defined New Container: {0!s}".format(container_name))
 
 
-def define_group(group_name: str) -> None:
-    """Define a new container group
-
-    Args:
-        group_name: Name of group to define.
-    """
-    LOGGER.info("Defining Group: {0!s}".format(group_name))
-
-    client = Docker(CONFIG_PATH)
-    client.groups.add(group_name)
-
-    LOGGER.info("Defined Group: {0!s}".format(group_name))
-
-
-def dump_container(container_name: str) -> None:
+def container_dump(container_name: str) -> None:
     """Dumps a containers definition file to the current directory.
 
     Args:
@@ -83,6 +182,68 @@ def dump_container(container_name: str) -> None:
 
     log_s = "Wrote container definition: {0!s}"
     LOGGER.info(log_s.format(definition_file))
+
+
+def container_start(container_name: str) -> None:
+    """Starts a defined container.
+
+    Args:
+        container_name: Name of container to start.
+    """
+    LOGGER.info("Starting Container: '{0!s}'".format(container_name))
+
+    client = Docker(CONFIG_PATH)
+    try:
+        container = client.containers.get(container_name)
+        container.start()
+        LOGGER.info("Started Container: '{0!s}'".format(container_name))
+    except DockerError as e:
+        LOGGER.error(e.message)
+        raise SystemExit(-1)
+
+
+def container_update(container_name: str) -> None:
+    """Updates a containers image and rebuilds the container.
+
+    Args:
+        container_name: Name of container to update and rebuild.
+    """
+    LOGGER.info("Updating Container: {0!s}".format(container_name))
+
+    client = Docker(CONFIG_PATH)
+    container = client.containers.get(container_name)
+
+    container.update()
+    container.rebuild()
+
+    LOGGER.info("Updated Container: {0!s}".format(container_name))
+
+
+def containers_list() -> None:
+    """Returns a list of currently defined containers."""
+    client = Docker(CONFIG_PATH)
+    containers = client.containers.list()
+
+    if len(containers) > 0:
+        LOGGER.info('Currently Defined Containers:')
+        for container in sorted(containers):
+            LOGGER.info("    {0!s}".format(container))
+    else:
+        LOGGER.info('No Currently Defined Containers')
+
+
+def group_define(group_name: str) -> None:
+    """Define a new container group
+
+    Args:
+        group_name: Name of group to define.
+    """
+    LOGGER.info("Defining Group: {0!s}".format(group_name))
+
+    client = Docker(CONFIG_PATH)
+    client.groups.add(group_name)
+
+    LOGGER.info("Defined Group: {0!s}".format(group_name))
 
 
 def group_info(group_name: str) -> None:
@@ -109,33 +270,7 @@ def group_info(group_name: str) -> None:
             LOGGER.info("        {0!s}".format(member_name))
 
 
-def list_containers() -> None:
-    """Returns a list of currently defined containers."""
-    client = Docker(CONFIG_PATH)
-    containers = client.containers.list()
-
-    if len(containers) > 0:
-        LOGGER.info('Currently Defined Containers:')
-        for container in sorted(containers):
-            LOGGER.info("    {0!s}".format(container))
-    else:
-        LOGGER.info('No Currently Defined Containers')
-
-
-def list_groups() -> None:
-    """Returns a list of currently defined groups."""
-    client = Docker(CONFIG_PATH)
-    groups = client.groups.list()
-
-    if len(groups) > 0:
-        LOGGER.info('Currently Defined Groups:')
-        for group in groups:
-            LOGGER.info("    {0!s}".format(group))
-    else:
-        LOGGER.info('No Currently Defined Groups')
-
-
-def set_group_master(group_name: str, master_name: str) -> None:
+def group_set_master(group_name: str, master_name: str) -> None:
     """Sets `group_names` master to `master_name`
 
     Args:
@@ -160,47 +295,49 @@ def set_group_master(group_name: str, master_name: str) -> None:
     LOGGER.info(log_s.format(group_name, master_name))
 
 
-def update_container(container_name: str) -> None:
-    """Updates a containers image and rebuilds the container.
+def group_start(group_name: str) -> None:
+    """Starts the specified group of containers.
 
     Args:
-        container_name: Name of container to update and rebuild.
+        group_name: Group name to start.
     """
-    LOGGER.info("Updating Container: {0!s}".format(container_name))
-
     client = Docker(CONFIG_PATH)
-    container = client.containers.get(container_name)
+    group = _group_get(client, group_name)
+    master, containers = _group_list(client, group)
 
-    container.update()
-    container.rebuild()
+    LOGGER.info("Starting Containers Group: '{0!s}'".format(group_name))
+    _group_start(master, containers)
+    update_s = "Finished updating and rebuilding members of group '{0!s}'"
+    LOGGER.info(update_s.format(group_name))
 
-    LOGGER.info("Updated Container: {0!s}".format(container_name))
+
+def group_stop(group_name: str) -> None:
+    """Stops all containers in the specified group.
+
+    Args:
+        group_name: Group name to stop.
+    """
+    client = Docker(CONFIG_PATH)
+    group = _group_get(client, group_name)
+    master, containers = _group_list(client, group)
+
+    LOGGER.info("Stopping Containers Group: '{0!s}'".format(group_name))
+    _group_stop(master, containers)
+    LOGGER.info("Stopped Containers Group: '{0!s}'".format(group_name))
 
 
-def update_group(group_name: str) -> None:
+def group_update(group_name: str) -> None:
     """Updates all containers in a group and rebuilds them.
 
     Args:
         group_name: Group name to update and rebuild.
     """
     client = Docker(CONFIG_PATH)
-    try:
-        group = client.groups.get(group_name)
-    except DockerError as e:
-        LOGGER.error(e.message)
-        raise SystemExit(-1)
+    group = _group_get(client, group_name)
+    master, containers = _group_list(client, group)
 
     update_s = "Updating and rebuilding members of group '{0!s}'"
     LOGGER.info(update_s.format(group_name))
-
-    master = None
-    if group.master:
-        master = client.containers.get(group.master)
-
-    containers = []
-    for container_name in client.containers.list():
-        if container_name != group.master:
-            containers.append(client.containers.get(container_name))
 
     update_s = "Updating container image for '{0!s}'"
     if master:
@@ -210,90 +347,58 @@ def update_group(group_name: str) -> None:
         LOGGER.info(update_s.format(container.info.name))
         container.image.pull()
 
-    update_s = "Shutting down and removing container '{0!s}'"
-    for container in containers:
-        LOGGER.info(update_s.format(container.info.name))
-        container.stop()
-        container.remove()
-    if master:
-        LOGGER.info(update_s.format(master.info.name))
-        master.stop()
-        master.remove()
+    _group_stop(master, containers, True)
 
-    update_s = "Starting new copy of container '{0!s}'"
-    if master:
-        LOGGER.info(update_s.format(master.inof.name))
-        master.start()
-    for container in containers:
-        LOGGER.info(update_s.format(container.info.name))
-        container.start()
+    _group_start(master, containers)
 
     update_s = "Finished updating and rebuilding members of group '{0!s}'"
     LOGGER.info(update_s.format(group_name))
 
 
+def groups_list() -> None:
+    """Returns a list of currently defined groups."""
+    client = Docker(CONFIG_PATH)
+    groups = client.groups.list()
+
+    if len(groups) > 0:
+        LOGGER.info('Currently Defined Groups:')
+        for group in groups:
+            LOGGER.info("    {0!s}".format(group))
+    else:
+        LOGGER.info('No Currently Defined Groups')
+
+
+# noinspection PyUnresolvedReferences
 def main() -> None:
     """Main function"""
-    project_desc = 'ElJef Docker functionality'
-    parser = argparse.ArgumentParser(description=project_desc)
-    parser.add_argument('--define-container', dest='define_container',
-                        help='Define a new container using specified YAML '
-                             'definition file.')
-    parser.add_argument('--define-group', dest='define_group',
-                        help='Define new container group.')
-    parser.add_argument('--dump-container', dest='dump_container',
-                        help='Dumps a containers definition file to the '
-                             'current directory.')
-    parser.add_argument('--group-info', dest='group_info',
-                        help='Returns group information for the specified '
-                             'group.')
-    parser.add_argument('--list-containers', dest='list_containers',
-                        action='store_true',
-                        help='Returns a list of containers managed by the '
-                             'ElJef Docker software.')
-    parser.add_argument('--list-groups', dest='list_groups',
-                        action='store_true',
-                        help='Returns a list of currently defined groups.')
-    parser.add_argument('--set-group-master', dest='set_group_master',
-                        help='Sets the master for the specified group. '
-                             '(This must be comma separated '
-                             'group_name,master_name)')
-    parser.add_argument('--update-container', dest='update_container',
-                        help='Update the specified containers image and '
-                             'rebuild the container.')
-    parser.add_argument('--update-group', dest='update_group',
-                        help='Update all containers in the specified group and'
-                             'rebuild them.')
-    parser.add_argument('--debug', dest='debug_log', action='store_true',
-                        help='Enable debug output.')
-    args = parser.parse_args()
+    args, parser = _command_line_args()
+    setup_app_logging(args.debug_log)
 
-    LOGGER.setLevel(logging.DEBUG if args.debug_log else logging.INFO)
-    c_formatter = logging.Formatter('%(message)s')
-    c_handler = logging.StreamHandler(sys.stdout)
-    c_handler.setLevel(logging.DEBUG if args.debug_log else logging.INFO)
-    c_handler.setFormatter(c_formatter)
-    LOGGER.addHandler(c_handler)
-
-    if args.define_container:
-        define_container(args.define_container)
-    elif args.define_group:
-        define_group(args.define_group)
-    elif args.dump_container:
-        dump_container(args.dump)
+    if args.container_define:
+        container_define(args.container_define)
+    elif args.container_dump:
+        container_dump(args.container_dump)
+    elif args.container_start:
+        container_start(args.container_start)
+    elif args.container_update:
+        container_update(args.container_update)
+    elif args.containers_list:
+        containers_list()
+    elif args.group_define:
+        group_define(args.group_define)
     elif args.group_info:
         group_info(args.group_info)
-    elif args.list_containers:
-        list_containers()
-    elif args.list_groups:
-        list_groups()
-    elif args.set_group_master:
-        group_name, master_name = args.set_group_master.split(',')
-        set_group_master(group_name, master_name)
-    elif args.update_container:
-        update_container(args.update_container)
-    elif args.update_group:
-        update_group(args.update_group)
+    elif args.group_set_master:
+        group_name, master_name = args.group_set_master.split(',')
+        group_set_master(group_name, master_name)
+    elif args.group_start:
+        group_start(args.group_start)
+    elif args.group_stop:
+        group_stop(args.group_stop)
+    elif args.group_update:
+        group_update(args.group_update)
+    elif args.groups_list:
+        groups_list()
     else:
         parser.print_help()
 

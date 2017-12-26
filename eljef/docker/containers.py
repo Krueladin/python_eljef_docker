@@ -22,6 +22,10 @@ import docker
 import logging
 import os
 
+from docker.errors import NotFound
+from docker.types.services import Mount
+from typing import List
+
 from eljef.core import fops
 from eljef.core.check import version_check
 from eljef.core.dictobj import DictObj
@@ -63,6 +67,27 @@ class ContainerOpts(DictObj):
         self.restart = ''
 
 
+def _build_volumes(mounts: list) -> List[Mount]:
+    volumes = list()
+
+    for vol in mounts:
+        host_path, cont_path, mode = None, None, None
+        if vol.count(':') == 1:
+            host_path, cont_path = vol.split(':')
+        elif vol.count(':') == 2:
+            host_path, cont_path, mode = vol.split(':')
+        else:
+            raise ConfigError("Malformed Path: {0!s}".format(vol))
+
+        read_only = True if mode == 'ro' else False
+
+        mount = Mount(cont_path, host_path, type='bind', read_only=read_only,
+                      propagation='slave')
+        volumes.append(mount)
+
+    return volumes
+
+
 def _build_command_dict(options: ContainerOpts) -> dict:
     ret = dict()
     for attr in {'cap_add', 'cap_drop', 'devices', 'dns', 'environment'}:
@@ -70,9 +95,9 @@ def _build_command_dict(options: ContainerOpts) -> dict:
         if len(data) > 0:
             ret[attr] = data
 
-    ret['restart_policy'] = 'always'
+    ret['restart_policy'] = {'Name': 'always'}
     if options.restart:
-        ret['restart_policy'] = options.restart
+        ret['restart_policy']['Name'] = options.restart
 
     ret['name'] = options.name
 
@@ -82,24 +107,7 @@ def _build_command_dict(options: ContainerOpts) -> dict:
         ret['network_mode'] = "container:{0!s}".format(options.net)
 
     if len(options.mounts) > 0:
-        volumes = dict()
-        for vol in options.mounts:
-            host_path, cont_path, mode = None, None, None
-            vol_dict = dict()
-            if vol.count(':') == 1:
-                host_path, cont_path = vol.split(':')
-            elif vol.count(':') == 2:
-                host_path, cont_path, mode = vol.split(':')
-            else:
-                raise ConfigError("Malformed Path: {0!s}".format(vol))
-
-            if not mode or mode not in {'ro', 'rw'}:
-                mode = 'rw'
-
-            vol_dict['bind'] = cont_path
-            vol_dict['mode'] = mode
-            volumes[host_path] = vol_dict
-        ret['volumes'] = volumes
+        ret['mounts'] = _build_volumes(options.mounts)
 
     if len(options.ports) > 0:
         ports = dict()
@@ -128,7 +136,7 @@ def validate_container_options(options: dict) -> ContainerOpts:
         ConfigError: If type of data is incorrect or data is missing.
    """
     validated = ContainerOpts()
-    for key, value in validated:
+    for key, value in validated.items():
         if key in options:
             data = options[key]
             if type(data) in {bytes, str}:
@@ -147,6 +155,7 @@ def validate_container_options(options: dict) -> ContainerOpts:
                         k_is = type(data[c]).__name__
                         err_s = VALIDATE_TE_LIST.format(c, key, k_is)
                         raise ConfigError(err_s)
+                    c += 1
             validated[key] = data
 
     if not validated.image:
@@ -174,7 +183,10 @@ class DockerContainer(object):
 
     def __get(self):
         if not self.__container:
-            self.__container = self.__client.containers.get(self.info.name)
+            try:
+                self.__container = self.__client.containers.get(self.info.name)
+            except NotFound:
+                self.__container = None
 
     def dump(self) -> str:
         """Dumps the configuration for this container to a file in the
@@ -183,7 +195,7 @@ class DockerContainer(object):
         Returns:
             Path to written file.
         """
-        cur_path = os.path.abspath(os.path.curdir())
+        cur_path = os.path.abspath(os.path.curdir)
         yaml_file = os.path.join(cur_path, "{0!s}.yaml".format(self.info.name))
         fops.file_write_convert(yaml_file, 'YAML', self.info.to_dict())
 
@@ -205,6 +217,28 @@ class DockerContainer(object):
         self.__container.remove()
         self.__container = None
 
+    def run(self) -> None:
+        """Runs a container.
+
+        Notes:
+            The container is ran in daemonized (background, detached)
+            mode.
+        """
+        LOGGER.debug("Running container: {0!s}".format(self.info.name))
+        if self.__container:
+            log_s = "Container '{0!s}' exists. Must stop() and remove() first."
+            raise DockerError(log_s.format(self.info.name))
+
+        if not self.image.exists():
+            self.image.pull()
+
+        kw_args = _build_command_dict(self.info)
+        kw_args['detach'] = True
+
+        self.__container = self.__client.containers.run(self.info.image,
+                                                        **kw_args)
+        LOGGER.debug("Ran container: {0!s}".format(self.info.name))
+
     def restart(self) -> None:
         self.stop()
         self.start()
@@ -217,18 +251,11 @@ class DockerContainer(object):
             mode.
         """
         LOGGER.debug("Starting container: {0!s}".format(self.info.name))
-        if self.__container:
-            log_s = "Container '{0!s}' exists. Must stop() first."
-            raise DockerError(log_s.format(self.info.name))
-
-        if not self.image.exists():
-            self.image.pull()
-
-        kw_args = _build_command_dict(self.info)
-        kw_args['detach'] = True
-
-        self.__container = self.__client.containers.run(self.info.image,
-                                                        **kw_args)
+        self.__get()
+        if not self.__container:
+            self.run()
+        else:
+            self.__container.start()
         LOGGER.debug("Started container: {0!s}".format(self.info.name))
 
     def stop(self) -> None:

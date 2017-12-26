@@ -42,12 +42,12 @@ class DockerGroup(DictObj):
         super().__init__()
         self.master = None
         self.members = []
-        if group_data and 'master' in group_data:
+        if group_data and 'master' in group_data and group_data['master']:
             if not isinstance(group_data['master'], str):
                 err_s = "'master' key in 'group_data' needs to be a str"
                 raise TypeError(err_s)
             self.master = group_data['master']
-        if group_data and 'members' in group_data:
+        if group_data and 'members' in group_data and group_data['members']:
             if not isinstance(group_data['members'], list):
                 err_s = "'members' key in 'group_data' needs to be a list"
                 raise TypeError(err_s)
@@ -64,24 +64,27 @@ class DockerGroups(object):
         self.__config = os.path.join(os.path.abspath(config_path),
                                      'groups.yaml')
         self.__groups = DictObj()
+        self.__read()
 
     def __read(self) -> None:
         LOGGER.debug('Building list of currently defined groups.')
         groups_yaml = fops.file_read_convert(self.__config, 'YAML', True)
-        for key, value in groups_yaml.keys():
-            self.add(key, value)
+        for key, value in groups_yaml.items():
+            self.add(key, value, False)
 
-    def add(self, group: str, group_data: dict=None) -> None:
+    def add(self, group: str, group_data: dict=None, save: bool=True) -> None:
         """Define a new group by name.
 
         Args:
             group: Name of group to define and add to the list of currently
                    defined groups.
             group_data: `master` and `member` data for a group.
+            save: Save group data to file after completion of adding.
         """
         if group not in self.__groups:
             self.__groups[group] = DockerGroup(group_data)
-            self.save()
+            if save:
+                self.save()
             LOGGER.debug("Group '{0!s}' successfully added.".format(group))
         else:
             LOGGER.debug("Group '{0!s}' already exists.".format(group))
