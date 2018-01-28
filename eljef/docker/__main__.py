@@ -44,60 +44,77 @@ else:
     CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.config', 'eljef',
                                'docker')
 
-
-def _command_line_args() -> Tuple[argparse.Namespace, argparse.ArgumentParser]:
-    project_desc = 'ElJef Docker functionality'
-    parser = argparse.ArgumentParser(description=project_desc)
-    parser.add_argument('--container-define', dest='container_define',
-                        metavar='CONTAINER_DEFINITION.YAML',
-                        help='Define a new container using specified YAML '
-                             'definition file.')
-    parser.add_argument('--container-dump', dest='container_dump',
-                        metavar='CONTAINER_NAME',
-                        help='Dumps a containers definition file to the '
-                             'current directory.')
-    parser.add_argument('--container-start', dest='container_start',
-                        metavar='CONTAINER_NAME',
-                        help='Starts the defined container.')
-    parser.add_argument('--container-update', dest='container_update',
-                        metavar='CONTAINER_NAME',
-                        help='Update the specified containers image and '
-                             'rebuild the container.')
-    parser.add_argument('--containers-list', dest='containers_list',
-                        action='store_true',
-                        help='Returns a list of containers managed by the '
-                             'ElJef Docker software.')
-    parser.add_argument('--group-define', dest='group_define',
-                        metavar='GROUP_NAME',
-                        help='Define new container group.')
-    parser.add_argument('--group-info', dest='group_info',
-                        metavar='GROUP_NAME',
-                        help='Returns group information for the specified '
-                             'group.')
-    parser.add_argument('--group-set-master', dest='group_set_master',
-                        metavar='GROUP_NAME,MASTER_NAME',
-                        help='Sets the master for the specified group. '
-                             '(This must be comma separated '
-                             'group_name,master_name)')
-    parser.add_argument('--group-restart', dest='group_restart',
-                        metavar='GROUP_NAME',
-                        help='Restarts the specified group of containers.')
-    parser.add_argument('--group-start', dest='group_start',
-                        metavar='GROUP_NAME',
-                        help='Starts the specified group of containers.')
-    parser.add_argument('--group-stop', dest='group_stop',
-                        metavar='GROUP_NAME',
-                        help='Stops all containers in the specified group.')
-    parser.add_argument('--group-update', dest='group_update',
-                        metavar='GROUP_NAME',
-                        help='Update all containers in the specified group and'
-                             'rebuild them.')
-    parser.add_argument('--groups-list', dest='groups_list',
-                        action='store_true',
-                        help='Returns a list of currently defined groups.')
-    parser.add_argument('--debug', dest='debug_log', action='store_true',
-                        help='Enable debug output.')
-    return parser.parse_args(), parser
+C_LINE_ARGS = {
+    '--container-define': {
+        'dest': 'container_define',
+        'metavar': 'CONTAINER_DEFINITION.YAML',
+        'help': 'Define a new container using specified YAML definition file.'
+    },
+    '--container-dump': {
+        'dest': 'container_dump',
+        'metavar': 'CONTAINER_NAME',
+        'help': 'Dumps a containers definition file to the current directory.'
+    },
+    '--container-start': {
+        'dest': 'container_start',
+        'metavar': 'CONTAINER_NAME',
+        'help': 'Starts the defined container.'
+    },
+    '--container-update': {
+        'dest': 'container_update',
+        'metavar': 'CONTAINER_NAME',
+        'help': 'Update the specified containers image and rebuild the '
+                'container.'
+    },
+    '--containers-list': {
+        'dest': 'containers_list',
+        'action': 'store_true',
+        'help': 'Returns a list of containers managed by the ElJef Docker '
+                'software.'
+    },
+    '--group-define': {
+        'dest': 'group_define',
+        'metavar': 'GROUP_NAME',
+        'help': 'Define new container group.'
+    },
+    '--group-info': {
+        'dest': 'group_info',
+        'metavar': 'GROUP_NAME',
+        'help': 'Returns group information for the specified group.'
+    },
+    '--group-set-master': {
+        'dest': 'group_set_master',
+        'metavar': 'GROUP_NAME,MASTER_NAME',
+        'help': 'Sets the master for the specified group. (This must be '
+                'comma separated group_name,master_name)'
+    },
+    '--group-restart': {
+        'dest': 'group_restart',
+        'metavar': 'GROUP_NAME',
+        'help': 'Restarts the specified group of containers.'
+    },
+    '--group-start': {
+        'dest': 'group_start',
+        'metavar': 'GROUP_NAME',
+        'help': 'Starts the specified group of containers.'
+    },
+    '--group-stop': {
+        'dest': 'group_stop',
+        'metavar': 'GROUP_NAME',
+        'help': 'Stops all containers in the specified group.'
+    },
+    '--group-update': {
+        'dest': 'group_update',
+        'metavar': 'GROUP_NAME',
+        'help': 'Update all containers in the specified group and rebuild '
+                'them.'
+    },
+    '--groups-list': {
+        'dest': 'groups_list',
+        'action': 'store_true',
+        'help': 'Returns a list of currently defined groups.'
+    }
+}
 
 
 def _group_get(client: Docker, group_name: str) -> DockerGroup:
@@ -371,7 +388,16 @@ def groups_list() -> None:
 # noinspection PyUnresolvedReferences
 def main() -> None:
     """Main function"""
-    args, parser = _command_line_args()
+    project_desc = 'ElJef Docker functionality'
+    parser = argparse.ArgumentParser(description=project_desc)
+
+    for key, value in C_LINE_ARGS.items():
+        parser.add_argument(key, **value)
+
+    parser.add_argument('--debug', dest='debug_log', action='store_true',
+                        help='Enable debug output.')
+
+    args = parser.parse_args()
     setup_app_logging(args.debug_log)
 
     if args.container_define:
