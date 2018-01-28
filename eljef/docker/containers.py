@@ -331,7 +331,12 @@ class DockerContainers(object):
         self.__containers[t['name']] = fp
 
         LOGGER.debug("Saving configuration for '{0!s}'".format(t['name']))
-        fops.file_write_convert(fp, 'YAML', t.to_dict())
+        out_dict = t.to_dict()
+        for i in {'group', 'image_password', 'image_username', 'network',
+                  'restart'}:
+            if out_dict[i] is None:
+                out_dict[i] = ''
+        fops.file_write_convert(fp, 'YAML', out_dict)
 
         return t.name
 
