@@ -1,0 +1,15 @@
+ElJef Docker
+
+The ElJef Docker API provides functionality for operating with docker
+containers.
+
+To produce the full documentation set, run `make html` in the docs directory.
+
+Other make targets are available as well. Run `make help` for a full list.
+
+The documentation is generated using sphinx. Make sure you have that package
+installed before generating. The documentation uses the sphinx rtd theme.
+Make sure you have the package containing this theme installed before trying
+to generate documentation.
+
+The resultant documentation will be output to docs/build/html

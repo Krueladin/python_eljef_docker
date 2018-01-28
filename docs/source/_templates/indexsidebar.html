@@ -1,0 +1,9 @@
+<h3><a href="index.html">ElJef-Docker</a></h3>
+<p>{%trans%}Current Version: <b>{{ version}}</b>{%endtrans%}</p>
+{% block sidebartoc %}
+<h3>{{ _('Table Of Contents') }}</h3>
+{{ toctree(includehidden=True) }}
+<br/><a href="{{ pathto('genindex') }}">Function Index</a>
+{% endblock %}
+<br/>
+<br/>
