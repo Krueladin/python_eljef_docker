@@ -71,7 +71,7 @@ image: repo/image
 
 # A list of volumes to add to the docker image
 # https://docs.docker.com/engine/reference/commandline/run/#options
-# These should be specified teh same way they would specified to
+# These should be specified the same way they would specified to
 # docker run -v
 # ie:
 #    /path/on/host:/path/in/container
@@ -109,3 +109,13 @@ name: container_name
 # docker run --restart
 # Comment out to disable.
 restart: always
+
+# tmpfs mounts for the container.
+# https://docs.docker.com/storage/tmpfs/
+# Same as to be specified to
+# docker run --tmpfs
+# Comment out to disable.
+# You can specify extra values as a comma separated list after a semicolon
+#tmpfs:
+#- /tmp:size=3G,uid=1000
+#- /run

@@ -65,6 +65,7 @@ class ContainerOpts(DictObj):
         self.network = ''
         self.ports = []
         self.restart = ''
+        self.tmpfs = []
 
 
 def _build_volumes(mounts: list) -> List[Mount]:
@@ -118,6 +119,17 @@ def _build_command_dict(options: ContainerOpts) -> dict:
 
     if len(options.image_args) > 0:
         ret['command'] = options.image_args
+
+    if len(options.image_args) > 0:
+        v = {}
+        for i in options.tmpfs:
+            if ':' in i:
+                t = i.split(':')
+                v[t[0]] = t[1]
+            else:
+                v[i] = ''
+
+        ret['tmpfs'] = v
 
     return ret
 
