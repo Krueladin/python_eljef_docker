@@ -2,6 +2,7 @@
 .idea/*.xml
 .idea/*.iml
 .idea/inspectionProfiles/
+.idea/dictionaries/*.xml
 
 /docs/build/*
 /docs/source/_static/*
