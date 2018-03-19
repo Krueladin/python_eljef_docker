@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+# pylint: disable=too-many-arguments,no-name-in-module,no-member,import-error
 # Copyright (c) 2017, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -18,9 +19,9 @@
 
 This module holds functionality for performing operations on Docker images.
 """
-import docker
-import json
 import logging
+import json
+import docker
 
 from docker.errors import ImageNotFound
 
@@ -53,8 +54,8 @@ class DockerImage(object):
             self.__image, self.__tag = image_name.rsplit(':', 1)
 
     @staticmethod
-    def __args_dict(insecure_registry: bool=False, username: str=None,
-                    password: str=None) -> dict:
+    def __args_dict(insecure_registry: bool = False, username: str = None,
+                    password: str = None) -> dict:
         kw_args = {'stream': True}
 
         if insecure_registry:
@@ -73,21 +74,19 @@ class DockerImage(object):
         Returns:
             True if containers image exists, False otherwise.
         """
-        log_s = "Searching for image '{0!s}'"
-        LOGGER.debug(log_s.format(self.__image))
+        LOGGER.debug("Searching for image '%s'", self.__image)
         try:
-            t = self.__client.images.get(self.__image)
-            log_s = "Found image for '{0!s}' with ID '{1!s}'"
-            LOGGER.debug(log_s.format(self.__image, t.short_id))
+            t_image = self.__client.images.get(self.__image)
+            LOGGER.debug("Found image for '%s' with ID '%s'", self.__image,
+                         t_image.short_id)
             return True
-        except ImageNotFound as e:
-            LOGGER.debug(e.explanation)
+        except ImageNotFound as err:
+            LOGGER.debug(err.explanation)
             return False
 
     def pull(self) -> None:
         """Pull an image from a registry."""
-        log_s = "Pulling image - {0!s}:{1!s}"
-        LOGGER.debug(log_s.format(self.__image, self.__tag))
+        LOGGER.debug("Pulling image - %s:%s", self.__image, self.__tag)
 
         pull = self.__client.api.pull
         for line in pull(self.__image, tag=self.__tag, **self.__args):

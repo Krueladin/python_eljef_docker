@@ -38,7 +38,7 @@ class DockerGroup(DictObj):
     Args:
         group_data: ``master`` and ``members`` data for the group.
     """
-    def __init__(self, group_data: dict=None) -> None:
+    def __init__(self, group_data: dict = None) -> None:
         super().__init__()
         self.master = None
         self.members = []
@@ -72,7 +72,8 @@ class DockerGroups(object):
         for key, value in groups_yaml.items():
             self.add(key, value, False)
 
-    def add(self, group: str, group_data: dict=None, save: bool=True) -> None:
+    def add(self, group: str, group_data: dict = None,
+            save: bool = True) -> None:
         """Define a new group by name.
 
         Args:
@@ -85,9 +86,9 @@ class DockerGroups(object):
             self.__groups[group] = DockerGroup(group_data)
             if save:
                 self.save()
-            LOGGER.debug("Group '{0!s}' successfully added.".format(group))
+            LOGGER.debug("Group '%s' successfully added.", group)
         else:
-            LOGGER.debug("Group '{0!s}' already exists.".format(group))
+            LOGGER.debug("Group '%s' already exists.", group)
 
     def get(self, group) -> DockerGroup:
         """Get a group object by name.
@@ -114,7 +115,7 @@ class DockerGroups(object):
             returned.
         """
         ret = []
-        if len(self.__groups) > 0:
+        if self.__groups:
             ret += [*self.__groups]
         return ret
 

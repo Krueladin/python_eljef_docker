@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+# pylint: disable=too-many-branches
 # Copyright (c) 2017, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -18,14 +19,14 @@
 
 The main script for ElJef Docker operations.
 """
+from typing import List
+from typing import Tuple
+from typing import Union
+
 import logging
 import argparse
 import os
 import platform
-
-from typing import List
-from typing import Tuple
-from typing import Union
 
 from eljef.core.applog import setup_app_logging
 from eljef.core.check import version_check
@@ -121,8 +122,8 @@ def _group_get(client: Docker, group_name: str) -> DockerGroup:
     try:
         group = client.groups.get(group_name)
         return group
-    except DockerError as e:
-        LOGGER.error(e.message)
+    except DockerError as err:
+        LOGGER.error(err.message)
         raise SystemExit(-1)
 
 
@@ -143,28 +144,28 @@ def _group_list(client: Docker,
 
 def _group_start(master: Union[DockerContainer, None],
                  containers: List[DockerContainer]) -> None:
-    update_s = "Starting new copy of container '{0!s}'"
+    update_s = "Starting new copy of container '%s'"
     if master:
-        LOGGER.info(update_s.format(master.info.name))
+        LOGGER.info(update_s, master.info.name)
         master.start()
     for container in containers:
-        LOGGER.info(update_s.format(container.info.name))
+        LOGGER.info(update_s, container.info.name)
         container.start()
 
 
 def _group_stop(master: Union[DockerContainer, None],
                 containers: List[DockerContainer],
-                remove: bool=False) -> None:
+                remove: bool = False) -> None:
     update_s = "Shutting down container '{0!s}'"
     if remove:
-        update_s = "Shutting down and removing container '{0!s}'"
+        update_s = "Shutting down and removing container '%s'"
     for container in containers:
-        LOGGER.info(update_s.format(container.info.name))
+        LOGGER.info(update_s, container.info.name)
         container.stop()
         if remove:
             container.remove()
     if master:
-        LOGGER.info(update_s.format(master.info.name))
+        LOGGER.info(update_s, master.info.name)
         master.stop()
         if remove:
             master.remove()
@@ -181,7 +182,7 @@ def container_define(definition_file: str) -> None:
     client = Docker(CONFIG_PATH)
     container_name = client.containers.define(definition_file)
 
-    LOGGER.info("Defined New Container: {0!s}".format(container_name))
+    LOGGER.info("Defined New Container: %s", container_name)
 
 
 def container_dump(container_name: str) -> None:
@@ -190,15 +191,13 @@ def container_dump(container_name: str) -> None:
     Args:
         container_name: Name of container.
     """
-    log_s = "Dumping container definition for '{0!s}'"
-    LOGGER.info(log_s.format(container_name))
+    LOGGER.info("Dumping container definition for '%s'", container_name)
 
     client = Docker(CONFIG_PATH)
     container = client.containers.get(container_name)
     definition_file = container.dump()
 
-    log_s = "Wrote container definition: {0!s}"
-    LOGGER.info(log_s.format(definition_file))
+    LOGGER.info("Wrote container definition: %s", definition_file)
 
 
 def container_start(container_name: str) -> None:
@@ -207,15 +206,15 @@ def container_start(container_name: str) -> None:
     Args:
         container_name: Name of container to start.
     """
-    LOGGER.info("Starting Container: '{0!s}'".format(container_name))
+    LOGGER.info("Starting Container: '%s'", container_name)
 
     client = Docker(CONFIG_PATH)
     try:
         container = client.containers.get(container_name)
         container.start()
-        LOGGER.info("Started Container: '{0!s}'".format(container_name))
-    except DockerError as e:
-        LOGGER.error(e.message)
+        LOGGER.info("Started Container: '%s'", container_name)
+    except DockerError as err:
+        LOGGER.error(err.message)
         raise SystemExit(-1)
 
 
@@ -225,7 +224,7 @@ def container_update(container_name: str) -> None:
     Args:
         container_name: Name of container to update and rebuild.
     """
-    LOGGER.info("Updating Container: {0!s}".format(container_name))
+    LOGGER.info("Updating Container: %s", container_name)
 
     client = Docker(CONFIG_PATH)
     container = client.containers.get(container_name)
@@ -233,7 +232,7 @@ def container_update(container_name: str) -> None:
     container.update()
     container.rebuild()
 
-    LOGGER.info("Updated Container: {0!s}".format(container_name))
+    LOGGER.info("Updated Container: %s", container_name)
 
 
 def containers_list() -> None:
@@ -241,10 +240,10 @@ def containers_list() -> None:
     client = Docker(CONFIG_PATH)
     containers = client.containers.list()
 
-    if len(containers) > 0:
+    if containers:
         LOGGER.info('Currently Defined Containers:')
         for container in sorted(containers):
-            LOGGER.info("    {0!s}".format(container))
+            LOGGER.info("    %s", container)
     else:
         LOGGER.info('No Currently Defined Containers')
 
@@ -255,12 +254,12 @@ def group_define(group_name: str) -> None:
     Args:
         group_name: Name of group to define.
     """
-    LOGGER.info("Defining Group: {0!s}".format(group_name))
+    LOGGER.info("Defining Group: %s", group_name)
 
     client = Docker(CONFIG_PATH)
     client.groups.add(group_name)
 
-    LOGGER.info("Defined Group: {0!s}".format(group_name))
+    LOGGER.info("Defined Group: %s", group_name)
 
 
 def group_info(group_name: str) -> None:
@@ -272,19 +271,19 @@ def group_info(group_name: str) -> None:
     client = Docker(CONFIG_PATH)
     try:
         group = client.groups.get(group_name)
-    except DockerError as e:
-        LOGGER.error(e.message)
+    except DockerError as err:
+        LOGGER.error(err.message)
         raise SystemExit(-1)
 
-    LOGGER.info("Group: {0!s}".format(group_name))
+    LOGGER.info("Group: %s", group_name)
     if group.master:
-        LOGGER.info("    Master: {0!s}".format(group.master))
+        LOGGER.info("    Master: %s", group.master)
     if len(group.members) <= 0:
         LOGGER.info("    Members: None Defined.")
     else:
         LOGGER.info("    Members:")
         for member_name in sorted(group.members):
-            LOGGER.info("        {0!s}".format(member_name))
+            LOGGER.info("        %s", member_name)
 
 
 def group_set_master(group_name: str, master_name: str) -> None:
@@ -294,22 +293,19 @@ def group_set_master(group_name: str, master_name: str) -> None:
         group_name: Name of group to set master of.
         master_name: Name of container to set as master for group.
     """
-    log_s = "Settings master of '{0!s}' to '{1!s}'"
-    LOGGER.info(log_s.format(group_name, master_name))
+    LOGGER.info("Setting master of '%s' to '%s'", group_name, master_name)
     client = Docker(CONFIG_PATH)
     group = client.groups.get(group_name)
     containers = client.containers.list()
 
     if master_name not in containers:
-        err_s = "Specified master_name '{0!s}' is not defined."
-        LOGGER.error(err_s.format(master_name))
+        LOGGER.error("Specified master_name '%s' is not defined.", master_name)
         raise SystemExit(-1)
 
     group.master = master_name
     client.groups.save()
 
-    log_s = "Set master of '{0!s}' to '{1!s}'"
-    LOGGER.info(log_s.format(group_name, master_name))
+    LOGGER.info("Set master of '%s' to '%s'", group_name, master_name)
 
 
 def group_start(group_name: str) -> None:
@@ -322,10 +318,10 @@ def group_start(group_name: str) -> None:
     group = _group_get(client, group_name)
     master, containers = _group_list(client, group)
 
-    LOGGER.info("Starting Containers Group: '{0!s}'".format(group_name))
+    LOGGER.info("Starting Containers Group: '%s'", group_name)
     _group_start(master, containers)
-    update_s = "Finished updating and rebuilding members of group '{0!s}'"
-    LOGGER.info(update_s.format(group_name))
+    LOGGER.info("Finished updating and rebuilding members of group '%s'",
+                group_name)
 
 
 def group_stop(group_name: str) -> None:
@@ -338,9 +334,9 @@ def group_stop(group_name: str) -> None:
     group = _group_get(client, group_name)
     master, containers = _group_list(client, group)
 
-    LOGGER.info("Stopping Containers Group: '{0!s}'".format(group_name))
+    LOGGER.info("Stopping Containers Group: '%s'", group_name)
     _group_stop(master, containers)
-    LOGGER.info("Stopped Containers Group: '{0!s}'".format(group_name))
+    LOGGER.info("Stopped Containers Group: '%s'", group_name)
 
 
 def group_update(group_name: str) -> None:
@@ -353,23 +349,21 @@ def group_update(group_name: str) -> None:
     group = _group_get(client, group_name)
     master, containers = _group_list(client, group)
 
-    update_s = "Updating and rebuilding members of group '{0!s}'"
-    LOGGER.info(update_s.format(group_name))
+    LOGGER.info("Updating and rebuilding members of group '%s'", group_name)
 
-    update_s = "Updating container image for '{0!s}'"
     if master:
-        LOGGER.info(update_s.format(master.info.name))
+        LOGGER.info("Updating container image for '%s'", master.info.name)
         master.image.pull()
     for container in containers:
-        LOGGER.info(update_s.format(container.info.name))
+        LOGGER.info("Updating container image for '%s'", container.info.name)
         container.image.pull()
 
     _group_stop(master, containers, True)
 
     _group_start(master, containers)
 
-    update_s = "Finished updating and rebuilding members of group '{0!s}'"
-    LOGGER.info(update_s.format(group_name))
+    LOGGER.info("Finished updating and rebuilding members of group '%s'",
+                group_name)
 
 
 def groups_list() -> None:
@@ -377,10 +371,10 @@ def groups_list() -> None:
     client = Docker(CONFIG_PATH)
     groups = client.groups.list()
 
-    if len(groups) > 0:
+    if groups:
         LOGGER.info('Currently Defined Groups:')
         for group in groups:
-            LOGGER.info("    {0!s}".format(group))
+            LOGGER.info("    %s", group)
     else:
         LOGGER.info('No Currently Defined Groups')
 

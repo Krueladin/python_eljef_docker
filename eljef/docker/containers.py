@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+# pylint: disable=no-member,too-many-branches,too-many-instance-attributes,import-error,no-name-in-module
 # Copyright (c) 2017, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -18,13 +19,14 @@
 
 This module holds functionality for performing operations on Docker Containers.
 """
-import docker
+from typing import List
+
 import logging
 import os
+import docker
 
 from docker.errors import NotFound
 from docker.types.services import Mount
-from typing import List
 
 from eljef.core import fops
 from eljef.core.check import version_check
@@ -93,7 +95,7 @@ def _build_command_dict(options: ContainerOpts) -> dict:
     ret = dict()
     for attr in {'cap_add', 'cap_drop', 'devices', 'dns', 'environment'}:
         data = getattr(options, attr)
-        if len(data) > 0:
+        if data:
             ret[attr] = data
 
     ret['restart_policy'] = {'Name': 'always'}
@@ -107,29 +109,29 @@ def _build_command_dict(options: ContainerOpts) -> dict:
     elif options.net:
         ret['network_mode'] = "container:{0!s}".format(options.net)
 
-    if len(options.mounts) > 0:
+    if options.mounts:
         ret['mounts'] = _build_volumes(options.mounts)
 
-    if len(options.ports) > 0:
+    if options.ports:
         ports = dict()
         for port_group in options.ports:
             host_port, cont_port = port_group.split(':')
             ports[cont_port] = host_port
         ret['ports'] = ports
 
-    if len(options.image_args) > 0:
+    if options.image_args:
         ret['command'] = options.image_args
 
-    if len(options.image_args) > 0:
-        v = {}
+    if options.tmpfs:
+        t_dict = {}
         for i in options.tmpfs:
             if ':' in i:
-                t = i.split(':')
-                v[t[0]] = t[1]
+                t_var = i.split(':')
+                t_dict[t_var[0]] = t_var[1]
             else:
-                v[i] = ''
+                t_dict[i] = ''
 
-        ret['tmpfs'] = v
+        ret['tmpfs'] = t_dict
 
     return ret
 
@@ -151,23 +153,23 @@ def validate_container_options(options: dict) -> ContainerOpts:
     for key, value in validated.items():
         if key in options:
             data = options[key]
-            if type(data) in {bytes, str}:
+            if isinstance(data, (bytes, str)):
                 data = fops.makestr(data)
-            if type(data) != type(value):
+            if not isinstance(data, type(value)):
                 k_is = type(data).__name__
                 k_sb = type(value).__name__
                 err_s = VALIDATE_TE.format(key, k_is, k_sb)
                 raise ConfigError(err_s)
             if data == '':
                 data = None
-            if type(data) == list:
-                c = 0
-                while c < len(data):
-                    if type(data[c]) not in {bytes, str}:
-                        k_is = type(data[c]).__name__
-                        err_s = VALIDATE_TE_LIST.format(c, key, k_is)
+            if isinstance(data, list):
+                count = 0
+                while count < len(data):
+                    if not isinstance(data[count], (bytes, str)):
+                        k_is = type(data[count]).__name__
+                        err_s = VALIDATE_TE_LIST.format(count, key, k_is)
                         raise ConfigError(err_s)
-                    c += 1
+                    count += 1
             validated[key] = data
 
     if not validated.image:
@@ -211,7 +213,7 @@ class DockerContainer(object):
         yaml_file = os.path.join(cur_path, "{0!s}.yaml".format(self.info.name))
         fops.file_write_convert(yaml_file, 'YAML', self.info.to_dict())
 
-        LOGGER.debug("Wrote current config to: {0!s}".format(yaml_file))
+        LOGGER.debug("Wrote current config to: %s", yaml_file)
 
         return yaml_file
 
@@ -236,7 +238,7 @@ class DockerContainer(object):
             The container is ran in daemonized (background, detached)
             mode.
         """
-        LOGGER.debug("Running container: {0!s}".format(self.info.name))
+        LOGGER.debug("Running container: %s", self.info.name)
         if self.__container:
             log_s = "Container '{0!s}' exists. Must stop() and remove() first."
             raise DockerError(log_s.format(self.info.name))
@@ -249,9 +251,10 @@ class DockerContainer(object):
 
         self.__container = self.__client.containers.run(self.info.image,
                                                         **kw_args)
-        LOGGER.debug("Ran container: {0!s}".format(self.info.name))
+        LOGGER.debug("Ran container: %s", self.info.name)
 
     def restart(self) -> None:
+        """Restarts a container."""
         self.stop()
         self.start()
 
@@ -262,20 +265,20 @@ class DockerContainer(object):
             The container is started in daemonized (background, detached)
             mode.
         """
-        LOGGER.debug("Starting container: {0!s}".format(self.info.name))
+        LOGGER.debug("Starting container: %s", self.info.name)
         self.__get()
         if not self.__container:
             self.run()
         else:
             self.__container.start()
-        LOGGER.debug("Started container: {0!s}".format(self.info.name))
+        LOGGER.debug("Started container: %s", self.info.name)
 
     def stop(self) -> None:
         """Stops a running container."""
-        LOGGER.debug("Stopping container: {0!s}".format(self.info.name))
+        LOGGER.debug("Stopping container: %s", self.info.name)
         self.__get()
         self.__container.stop()
-        LOGGER.debug("Stopped container: {0!s}".format(self.info.name))
+        LOGGER.debug("Stopped container: %s", self.info.name)
 
     def update(self) -> None:
         """Updates the image for a container."""
@@ -291,7 +294,7 @@ class DockerContainers(object):
         groups: Initialized DockerGroups class (Not required)
     """
     def __init__(self, client: docker.DockerClient, config_path: str,
-                 groups: DockerGroups=None) -> None:
+                 groups: DockerGroups = None) -> None:
         self.__client = client
         self.__config_path = os.path.join(os.path.abspath(config_path),
                                           'containers')
@@ -306,8 +309,8 @@ class DockerContainers(object):
 
         for container_file in c_list:
             if container_file[-5:] == '.yaml':
-                fp = os.path.join(self.__config_path, container_file)
-                containers[container_file[:-5]] = fp
+                file_p = os.path.join(self.__config_path, container_file)
+                containers[container_file[:-5]] = file_p
 
         return containers
 
@@ -320,37 +323,36 @@ class DockerContainers(object):
         Returns:
             Name of newly defined container
         """
-        log_s = "Reading container definition {0!s}'".format(container_def)
-        LOGGER.debug(log_s)
-        fd = fops.file_read_convert(container_def, 'YAML')
+        LOGGER.debug("Reading container definition %s'", container_def)
+        file_d = fops.file_read_convert(container_def, 'YAML')
 
-        log_s = "Validating container definition {0!s}".format(container_def)
-        LOGGER.debug(log_s)
-        t = validate_container_options(fd)
+        LOGGER.debug("Validating container definition %s", container_def)
+        c_opts = validate_container_options(file_d)
 
-        if self.__groups and t['group']:
-            if t['group'] not in self.__groups.list():
+        if self.__groups and c_opts['group']:
+            if c_opts['group'] not in self.__groups.list():
                 err_s = "Container definition for '{0!s}' contains " \
                         "group that is not defined. " \
-                        "Add group first.".format(t['name'])
+                        "Add group first.".format(c_opts['name'])
                 raise ConfigError(err_s)
-            g_info = self.__groups.get(t['group'])
-            if t['name'] not in g_info.members:
-                g_info.members.append(t['name'])
+            g_info = self.__groups.get(c_opts['group'])
+            if c_opts['name'] not in g_info.members:
+                g_info.members.append(c_opts['name'])
                 self.__groups.save()
 
-        fp = os.path.join(self.__config_path, "{0!s}.yaml".format(t['name']))
-        self.__containers[t['name']] = fp
+        file_p = os.path.join(self.__config_path,
+                              "{0!s}.yaml".format(c_opts['name']))
+        self.__containers[c_opts['name']] = file_p
 
-        LOGGER.debug("Saving configuration for '{0!s}'".format(t['name']))
-        out_dict = t.to_dict()
+        LOGGER.debug("Saving configuration for '%s'", c_opts['name'])
+        out_dict = c_opts.to_dict()
         for i in {'group', 'image_password', 'image_username', 'network',
                   'restart'}:
             if out_dict[i] is None:
                 out_dict[i] = ''
-        fops.file_write_convert(fp, 'YAML', out_dict)
+        fops.file_write_convert(file_p, 'YAML', out_dict)
 
-        return t.name
+        return c_opts.name
 
     def get(self, container_name: str) -> DockerContainer:
         """Returns an already defined container
@@ -365,16 +367,14 @@ class DockerContainers(object):
             err_s = "Container '{0!s}' not defined."
             raise DockerError(err_s.format(container_name))
 
-        log_s = "Reading container info for {0!s}"
-        LOGGER.debug(log_s.format(container_name))
-        fd = fops.file_read_convert(self.__containers[container_name], 'YAML')
+        LOGGER.debug("Reading container info for %s", container_name)
+        file_d = fops.file_read_convert(self.__containers[container_name],
+                                        'YAML')
 
-        log_s = "Validating container info for {0!s}"
-        LOGGER.debug(log_s.format(container_name))
-        container_info = validate_container_options(fd)
+        LOGGER.debug("Validating container info for %s", container_name)
+        container_info = validate_container_options(file_d)
 
-        log_s = "Initializing image class for {0!s}"
-        LOGGER.debug(log_s.format(container_name))
+        LOGGER.debug("Initializing image class for %s", container_name)
         container_image = DockerImage(self.__client, container_info.image,
                                       container_info.image_insecure,
                                       container_info.image_username,

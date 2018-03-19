@@ -33,7 +33,7 @@ class ConfigError(Exception):
     Args:
         message: Error message
     """
-    def __init__(self, message: str=None) -> None:
+    def __init__(self, message: str = None) -> None:
         Exception.__init__(self, message)
         self.message = message
 
@@ -44,6 +44,6 @@ class DockerError(Exception):
     Args:
         message: Error Message
     """
-    def __init__(self, message: str=None) -> None:
+    def __init__(self, message: str = None) -> None:
         Exception.__init__(self, message)
         self.message = message

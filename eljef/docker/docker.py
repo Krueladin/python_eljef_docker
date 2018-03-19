@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+# pylint: disable=too-few-public-methods,no-member
 # Copyright (c) 2017, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -21,9 +22,9 @@ This module holds functionality for performing operations on Docker containers.
 TODO:
     TLS support
 """
-import docker
 import logging
 import os
+import docker
 
 from eljef.core import fops
 from eljef.core.check import version_check
@@ -44,7 +45,7 @@ class Docker(object):
         host: If the host running dockerd is remote, the hostname must should
               be provided in [hostname/ip]:port format.
     """
-    def __init__(self, config_path: str, host: str=None) -> None:
+    def __init__(self, config_path: str, host: str = None) -> None:
         fops.mkdir(os.path.abspath(config_path))
         self.__client = self.__connect(host)
         self.groups = DockerGroups(config_path)
@@ -52,9 +53,7 @@ class Docker(object):
                                            self.groups)
 
     @staticmethod
-    def __connect(host: str=None) -> docker.DockerClient:
+    def __connect(host: str = None) -> docker.DockerClient:
         LOGGER.debug('Creating docker connection client.')
-        if not host:
-            return docker.from_env()
-        else:
-            return docker.DockerClient(base_url=host)
+        return docker.from_env() if host else \
+            docker.DockerClient(base_url=host)
