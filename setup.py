@@ -24,7 +24,7 @@ setup(
     author='Jef Oliver',
     author_email='jef@eljef.me',
     description='Functions for working with Docker containers.',
-    install_requires=['eljef_core>=0.0.4', 'docker>=2.6.0'],
+    install_requires=['eljef_core>=0.0.9', 'docker>=3.1'],
     entry_points={
         'console_scripts': [
             'eljef-docker = eljef.docker.__main__:main'
