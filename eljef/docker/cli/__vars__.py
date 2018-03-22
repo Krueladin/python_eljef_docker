@@ -21,6 +21,7 @@ Variables used by ElJef Docker CLI.
 """
 import logging
 import os
+import pkg_resources
 import platform
 import sys
 
@@ -38,3 +39,4 @@ else:
 
 PROJECT_DESCRIPTION = 'ElJef Docker functionality'
 PROJECT_NAME = os.path.basename(sys.argv[0])
+PROJECT_VERSION = pkg_resources.get_distribution('eljef_docker').version
