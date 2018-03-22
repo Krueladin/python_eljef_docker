@@ -2,6 +2,8 @@
   <dictionary name="eljef_docker">
     <words>
       <w>daemonize</w>
+      <w>dest</w>
+      <w>tmpfs</w>
     </words>
   </dictionary>
 </component>
