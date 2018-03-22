@@ -68,6 +68,23 @@ def container_dump(container_name: str) -> None:
         raise SystemExit(1)
 
 
+def container_restart(container_name: str) -> None:
+    """Restarts a defined container.
+
+    Args:
+        container_name: Name of container to start.
+    """
+    LOGGER.info("Restarting Container: '%s'", container_name)
+    try:
+        client = Docker(CONFIG_PATH)
+        container = client.containers.get(container_name)
+        container.restart()
+        LOGGER.info("Restarted Container: '%s'", container_name)
+    except DockerError as err:
+        LOGGER.error("Docker Error: %s", err.message)
+        raise SystemExit(-1)
+
+
 def container_start(container_name: str) -> None:
     """Starts a defined container.
 
@@ -126,6 +143,8 @@ def do_container(args: argparse.Namespace) -> None:
         container_dump(args.container_dump)
     elif args.container_start:
         container_start(args.container_start)
+    elif args.container_restart:
+        container_restart(args.container_restart)
     elif args.container_update:
         container_update(args.container_update)
     elif args.containers_list:

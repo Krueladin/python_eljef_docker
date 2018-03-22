@@ -51,6 +51,11 @@ C_LINE_ARGS = {
                 'metavar': 'CONTAINER_NAME',
                 'help': 'Starts the defined container.'
             },
+            '--restart': {
+                'dest': 'container_restart',
+                'metavar': 'CONTAINER_NAME',
+                'help': 'Restarts the defined container.'
+            },
             '--update': {
                 'dest': 'container_update',
                 'metavar': 'CONTAINER_NAME',
