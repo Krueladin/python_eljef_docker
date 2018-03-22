@@ -27,7 +27,7 @@ setup(
     install_requires=['eljef_core>=0.0.9', 'docker>=3.1'],
     entry_points={
         'console_scripts': [
-            'eljef-docker = eljef.docker.__main__:main'
+            'eljef-docker = eljef.docker.cli.__main__:main'
         ]
     },
     python_requires='>=3.6'

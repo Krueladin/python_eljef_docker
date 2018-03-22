@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# pylint: disable=no-member,too-many-branches,too-many-instance-attributes,import-error,no-name-in-module
+# pylint: disable=R0902,R0912
 # Copyright (c) 2017, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -328,6 +328,10 @@ class DockerContainers(object):
 
         LOGGER.debug("Validating container definition %s", container_def)
         c_opts = validate_container_options(file_d)
+
+        if c_opts['name'] in self.__containers:
+            err_s = "Container '{0!s}' already defined.".format(c_opts['name'])
+            raise DockerError(err_s)
 
         if self.__groups and c_opts['group']:
             if c_opts['group'] not in self.__groups.list():
