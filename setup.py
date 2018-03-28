@@ -19,7 +19,7 @@ setup(
             'eljef-docker = eljef.docker.cli.__main__:main'
         ]
     },
-    install_requires=['eljef_core>=0.0.9', 'docker>=3.1'],
+    install_requires=['eljef_core>=0.0.10', 'docker>=3.1'],
     license='LGPLv2.1',
     name='eljef_docker',
     packages=['eljef.docker', 'eljef.docker.cli'],
