@@ -3,7 +3,13 @@
 # pylint: disable=invalid-name,redefined-builtin
 """Sphinx Configuration for ElJef Docker"""
 
+import sys
+import os
+
 from eljef.docker.__version__ import version as ejd_version
+
+FILE_PATH = os.path.dirname(os.path.abspath(os.path.join(__file__, '../..')))
+sys.path.insert(0, FILE_PATH)
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
 templates_path = ['_templates']
