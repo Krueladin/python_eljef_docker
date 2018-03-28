@@ -26,6 +26,7 @@ import platform
 import sys
 
 from eljef.core.check import version_check
+from eljef.docker.__version__ import version as ejd_version
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,4 +40,4 @@ else:
 
 PROJECT_DESCRIPTION = 'ElJef Docker functionality'
 PROJECT_NAME = os.path.basename(sys.argv[0])
-PROJECT_VERSION = pkg_resources.get_distribution('eljef_docker').version
+PROJECT_VERSION = ejd_version

@@ -15,7 +15,6 @@ __pycache__/
 
 !/docs/build/.dontdelete
 !/docs/source/_static/.dontdelete
-!/.PROJINFO
 !/.gitattributes
 !/.gitignore
 !/.idea/dictionaries/eljef_docker.xml

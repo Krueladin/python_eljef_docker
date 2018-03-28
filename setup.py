@@ -2,33 +2,29 @@
 """Setup script"""
 
 import sys
-from setuptools import setup, find_packages
+from setuptools import setup
+from eljef.docker.__version__ import version as ejd_version
 
 if sys.version_info[0] < 3:
     raise Exception('ElJef tools only support python version 3.6 or higher.')
 if sys.version_info[0] > 3 and sys.version_info[1] < 6:
     raise Exception('ElJef tools only support python version 3.6 or higher.')
 
-T_VARS = {}
-with open('.PROJINFO') as vars_file:
-    for line in vars_file:
-        key, value = line.partition('=')[::2]
-        T_VARS[key.strip()] = value.strip()
-
 setup(
-    name=T_VARS['NAME'],
-    version=T_VARS['VERSION'],
-    packages=find_packages(),
-    url='https://github.com/eljef/python_eljef_docker',
-    license='LGPLv2.1',
     author='Jef Oliver',
     author_email='jef@eljef.me',
     description='Functions for working with Docker containers.',
-    install_requires=['eljef_core>=0.0.9', 'docker>=3.1'],
     entry_points={
         'console_scripts': [
             'eljef-docker = eljef.docker.cli.__main__:main'
         ]
     },
-    python_requires='>=3.6'
+    install_requires=['eljef_core>=0.0.9', 'docker>=3.1'],
+    license='LGPLv2.1',
+    name='eljef_docker',
+    packages=['eljef.docker', 'eljef.docker.cli'],
+    python_requires='>=3.6',
+    url='https://github.com/eljef/python_eljef_docker',
+    version=ejd_version,
+    zip_safe=False,
 )
