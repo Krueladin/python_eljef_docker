@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 # pylint: disable=R0902
-# Copyright (c) 2017, Jef Oliver
+# Copyright (c) 2017-2018, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms and conditions of the GNU Lesser General Public License,
@@ -378,8 +378,10 @@ class DockerContainers(object):
         container_info = self.validate_container_options(file_d)
 
         LOGGER.debug("Initializing image class for %s", container_name)
-        container_image = DockerImage(self.__client, container_info.image, container_info.image_insecure,
-                                      container_info.image_username, container_info.image_password)
+        container_image = DockerImage(self.__client, container_info.image,
+                                      insecure_registry=container_info.image_insecure,
+                                      username=container_info.image_username,
+                                      password=container_info.image_password)
 
         return DockerContainer(self.__client, container_info, container_image)
 

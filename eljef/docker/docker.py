@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
-# pylint: disable=too-few-public-methods,no-member
-# Copyright (c) 2017, Jef Oliver
+# pylint: disable=too-few-public-methods
+# Copyright (c) 2017-2018, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms and conditions of the GNU Lesser General Public License,
@@ -48,8 +48,7 @@ class Docker(object):
         fops.mkdir(os.path.abspath(config_path))
         self.__client = self.__connect(host)
         self.groups = DockerGroups(config_path)
-        self.containers = DockerContainers(self.__client, config_path,
-                                           self.groups)
+        self.containers = DockerContainers(self.__client, config_path, self.groups)
 
     @staticmethod
     def __connect(host: str = None) -> docker.DockerClient:

@@ -1,6 +1,5 @@
 # -*- coding: UTF-8 -*-
-# pylint: disable=too-many-arguments,no-name-in-module,no-member,import-error
-# Copyright (c) 2017, Jef Oliver
+# Copyright (c) 2017-2018, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms and conditions of the GNU Lesser General Public License,
@@ -38,13 +37,16 @@ class DockerImage(object):
     Args:
         client: Initialized DockerClient class (Required)
         image_name: Image name
+
+    Keyword Args:
         insecure_registry: Registry that image is in is insecure
         username: Username for connecting to registry. If the username is defined, `password` is required.
         password: Password for connecting to registry
     """
-    def __init__(self, client: docker.DockerClient, image_name: str, insecure_registry: bool = False,
-                 username: str = None, password: str = None) -> None:
-        self.__args = self.__args_dict(insecure_registry, username, password)
+    def __init__(self, client: docker.DockerClient, image_name: str, **kwargs) -> None:
+        self.__args = self.__args_dict(kwargs.get('insecure_registry', False),
+                                       kwargs.get('username', None),
+                                       kwargs.get('password', None))
         self.__client = client
         self.__image = image_name
         self.__tag = 'latest'
@@ -52,12 +54,12 @@ class DockerImage(object):
             self.__image, self.__tag = image_name.rsplit(':', 1)
 
     @staticmethod
-    def __args_dict(insecure_registry: bool = False, username: str = None, password: str = None) -> dict:
+    def __args_dict(insecure_registry, username, password) -> dict:
         kw_args = {'stream': True}
 
         if insecure_registry:
             kw_args['insecure_registry'] = insecure_registry
-        if username and password:
+        if username or password:
             kw_args['auth_config'] = {
                 'username': username,
                 'password': password

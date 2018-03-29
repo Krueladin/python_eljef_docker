@@ -5,4 +5,4 @@ install:
 	python3 setup.py install
 
 lint:
-	tools/dolint.sh
+	@tools/dolint.sh || true

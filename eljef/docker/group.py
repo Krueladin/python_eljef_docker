@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# Copyright (c) 2017, Jef Oliver
+# Copyright (c) 2017-2018, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms and conditions of the GNU Lesser General Public License,
@@ -77,8 +77,7 @@ class DockerGroups(object):
         """Define a new group by name.
 
         Args:
-            group: Name of group to define and add to the list of currently
-                   defined groups.
+            group: Name of group to define and add to the list of currently defined groups.
             group_data: `master` and `member` data for a group.
             save: Save group data to file after completion of adding.
         """
@@ -111,8 +110,7 @@ class DockerGroups(object):
         """List defined groups.
 
         Returns:
-            A list of defined groups. If there are no groups, am empty list is
-            returned.
+            A list of defined groups. If there are no groups, am empty list is returned.
         """
         ret = []
         if self.__groups:
