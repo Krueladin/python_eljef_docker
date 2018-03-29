@@ -3,7 +3,9 @@
     <words>
       <w>daemonize</w>
       <w>dest</w>
+      <w>dolint</w>
       <w>tmpfs</w>
+      <w>typecheck</w>
     </words>
   </dictionary>
 </component>
