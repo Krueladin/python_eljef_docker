@@ -6,8 +6,6 @@
 import sys
 import os
 
-from eljef.docker.__version__ import VERSION as EJD_VERSION
-
 FILE_PATH = os.path.dirname(os.path.abspath(os.path.join(__file__, '../..')))
 sys.path.insert(0, FILE_PATH)
 
@@ -22,8 +20,8 @@ project = 'ElJef Docker'
 copyright = '2018, Jef Oliver'
 author = 'Jef Oliver'
 
-version = EJD_VERSION
-release = EJD_VERSION
+version = '0.0.6'
+release = '0.0.6'
 
 language = None
 

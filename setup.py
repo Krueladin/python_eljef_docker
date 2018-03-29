@@ -3,7 +3,6 @@
 
 import sys
 from setuptools import setup
-from eljef.docker.__version__ import VERSION as EJD_VERSION
 
 if sys.version_info[0] < 3:
     raise Exception('ElJef tools only support python version 3.6 or higher.')
@@ -25,6 +24,6 @@ setup(
     packages=['eljef.docker', 'eljef.docker.cli'],
     python_requires='>=3.6',
     url='https://github.com/eljef/python_eljef_docker',
-    version=EJD_VERSION,
+    version='0.0.6',
     zip_safe=False,
 )
