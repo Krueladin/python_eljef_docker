@@ -1,2 +1,3 @@
 # -*- coding: UTF-8 -*-
-version = '0.0.5'
+"""ElJef Docker Version"""
+VERSION = '0.0.6'

@@ -42,8 +42,7 @@ class Docker(object):
 
     Args:
         config_path: Path to base configuration directory.
-        host: If the host running dockerd is remote, the hostname must should
-              be provided in [hostname/ip]:port format.
+        host: If the host running dockerd is remote, the hostname must should be provided in [hostname/ip]:port format.
     """
     def __init__(self, config_path: str, host: str = None) -> None:
         fops.mkdir(os.path.abspath(config_path))
@@ -55,5 +54,4 @@ class Docker(object):
     @staticmethod
     def __connect(host: str = None) -> docker.DockerClient:
         LOGGER.debug('Creating docker connection client.')
-        return docker.from_env() if host else \
-            docker.DockerClient(base_url=host)
+        return docker.from_env() if host else docker.DockerClient(base_url=host)

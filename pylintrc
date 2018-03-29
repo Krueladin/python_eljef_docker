@@ -1,0 +1,19 @@
+[MASTER]
+ignore=.git
+
+[MESSAGES CONTROL]
+disable=
+
+[FORMAT]
+max-line-length=120
+indent-string='    '
+
+[MISCELLANEOUS]
+notes=FIXME,TODO
+
+[SIMILARITIES]
+ignore-comments=yes
+ignore-docstrings=yes
+
+[TYPECHECK]
+ignored-modules=docker

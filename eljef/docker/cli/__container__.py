@@ -22,9 +22,9 @@ import logging
 import argparse
 
 from eljef.core.check import version_check
-from eljef.docker.cli.__vars__ import CONFIG_PATH, PROJECT_NAME
+from eljef.docker.cli.__vars__ import (CONFIG_PATH, PROJECT_NAME)
 from eljef.docker.docker import Docker
-from eljef.docker.exceptions import ConfigError, DockerError
+from eljef.docker.exceptions import (ConfigError, DockerError)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -150,6 +150,5 @@ def do_container(args: argparse.Namespace) -> None:
     elif args.containers_list:
         containers_list()
     else:
-        LOGGER.error("You must specify an action. Try %s container --help",
-                     PROJECT_NAME)
+        LOGGER.error("You must specify an action. Try %s container --help", PROJECT_NAME)
         raise SystemExit(1)

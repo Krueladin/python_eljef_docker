@@ -6,7 +6,7 @@
 import sys
 import os
 
-from eljef.docker.__version__ import version as ejd_version
+from eljef.docker.__version__ import VERSION as EJD_VERSION
 
 FILE_PATH = os.path.dirname(os.path.abspath(os.path.join(__file__, '../..')))
 sys.path.insert(0, FILE_PATH)
@@ -22,8 +22,8 @@ project = 'ElJef Docker'
 copyright = '2018, Jef Oliver'
 author = 'Jef Oliver'
 
-version = ejd_version
-release = ejd_version
+version = EJD_VERSION
+release = EJD_VERSION
 
 language = None
 
@@ -41,11 +41,10 @@ html_sidebars = {'**': ['indexsidebar.html', 'searchbox.html']}
 
 latex_elements = {}
 latex_documents = [
-    (master_doc, 'ElJefDocker.tex', 'ElJef Docker Documentation',
-     'Jef Oliver', 'manual'),
+    (master_doc, 'ElJefDocker.tex', 'ElJef Docker Documentation', 'Jef Oliver', 'manual'),
 ]
 
 texinfo_documents = [
-    (master_doc, 'ElJefDocker', 'ElJef Docker Documentation', author,
-     'ElJefDocker', 'ElJef Docker functionality.', 'Miscellaneous'),
+    (master_doc, 'ElJefDocker', 'ElJef Docker Documentation', author, 'ElJefDocker', 'ElJef Docker functionality.',
+     'Miscellaneous'),
 ]

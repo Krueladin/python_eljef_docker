@@ -21,12 +21,11 @@ Variables used by ElJef Docker CLI.
 """
 import logging
 import os
-import pkg_resources
 import platform
 import sys
 
 from eljef.core.check import version_check
-from eljef.docker.__version__ import version as ejd_version
+from eljef.docker.__version__ import VERSION as EJD_VERSION
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,9 +34,8 @@ version_check(3, 6)
 if platform.system() == 'Windows':
     CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.eljef', 'docker')
 else:
-    CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.config', 'eljef',
-                               'docker')
+    CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.config', 'eljef', 'docker')
 
 PROJECT_DESCRIPTION = 'ElJef Docker functionality'
 PROJECT_NAME = os.path.basename(sys.argv[0])
-PROJECT_VERSION = ejd_version
+PROJECT_VERSION = EJD_VERSION

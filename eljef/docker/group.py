@@ -122,5 +122,4 @@ class DockerGroups(object):
     def save(self) -> None:
         """Save group information to file."""
         LOGGER.debug('Saving groups information.')
-        fops.file_write_convert(self.__config, 'YAML',
-                                self.__groups.to_dict())
+        fops.file_write_convert(self.__config, 'YAML', self.__groups.to_dict())

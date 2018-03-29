@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# pylint: disable=R0902,R0912
+# pylint: disable=R0902
 # Copyright (c) 2017, Jef Oliver
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -19,10 +19,11 @@
 
 This module holds functionality for performing operations on Docker Containers.
 """
-from typing import List
-
 import logging
 import os
+
+from typing import Any
+
 import docker
 
 from docker.errors import NotFound
@@ -42,8 +43,10 @@ LOGGER = logging.getLogger(__name__)
 version_check(3, 6)
 
 VALIDATE_TE = "Incorrect key type: '{0!s}' is '{1!s}' but needs to be '{2!s}'"
-VALIDATE_TE_LIST = "Incorrect list contents: Value at position '{0!s}' in "\
-                   "key '{1!s} has a type of '{2!s}' when it should be 'str'"
+VALIDATE_TE_LIST = "Incorrect list contents: Value at position '{0!s}' in key '{1!s} has a type of '{2!s}' when it " \
+                   "should be 'str'"
+
+_ERR_CONTAINER_UNDEF_GROUP = "Container definition for '{0!s}' contains group that is not defined. Add group first."
 
 
 class ContainerOpts(DictObj):
@@ -69,115 +72,120 @@ class ContainerOpts(DictObj):
         self.restart = ''
         self.tmpfs = []
 
+    def set_with_type(self, key: Any, value: Any) -> None:
+        """Sets an attribute after checking type.
 
-def _build_volumes(mounts: list) -> List[Mount]:
-    volumes = list()
+        This will check the type of ``value`` matches the type of ``key`` before setting.
+        """
+        o_value = getattr(self, key)
 
-    for vol in mounts:
-        host_path, cont_path, mode = None, None, None
-        if vol.count(':') == 1:
-            host_path, cont_path = vol.split(':')
-        elif vol.count(':') == 2:
-            host_path, cont_path, mode = vol.split(':')
-        else:
-            raise ConfigError("Malformed Path: {0!s}".format(vol))
+        if not isinstance(value, type(o_value)):
+            k_is = type(value).__name__
+            k_sb = type(o_value).__name__
+            err_s = VALIDATE_TE.format(key, k_is, k_sb)
+            raise ConfigError(err_s)
+        elif isinstance(value, list):
+            count = 0
+            while count < len(value):
+                if not isinstance(value[count], (bytes, str)):
+                    k_is = type(value[count]).__name__
+                    err_s = VALIDATE_TE_LIST.format(count, key, k_is)
+                    raise ConfigError(err_s)
+                count += 1
 
-        read_only = True if mode == 'ro' else False
-
-        mount = Mount(cont_path, host_path, type='bind', read_only=read_only,
-                      propagation='slave')
-        volumes.append(mount)
-
-    return volumes
-
-
-def _build_command_dict(options: ContainerOpts) -> dict:
-    ret = dict()
-    for attr in {'cap_add', 'cap_drop', 'devices', 'dns', 'environment'}:
-        data = getattr(options, attr)
-        if data:
-            ret[attr] = data
-
-    ret['restart_policy'] = {'Name': 'always'}
-    if options.restart:
-        ret['restart_policy']['Name'] = options.restart
-
-    ret['name'] = options.name
-
-    if options.network:
-        ret['network'] = options.network
-    elif options.net:
-        ret['network_mode'] = "container:{0!s}".format(options.net)
-
-    if options.mounts:
-        ret['mounts'] = _build_volumes(options.mounts)
-
-    if options.ports:
-        ports = dict()
-        for port_group in options.ports:
-            host_port, cont_port = port_group.split(':')
-            ports[cont_port] = host_port
-        ret['ports'] = ports
-
-    if options.image_args:
-        ret['command'] = options.image_args
-
-    if options.tmpfs:
-        t_dict = {}
-        for i in options.tmpfs:
-            if ':' in i:
-                t_var = i.split(':')
-                t_dict[t_var[0]] = t_var[1]
-            else:
-                t_dict[i] = ''
-
-        ret['tmpfs'] = t_dict
-
-    return ret
+        setattr(self, key, None if value == '' else value)
 
 
-def validate_container_options(options: dict) -> ContainerOpts:
-    """Validate incoming option types to provide base sanity
+class _CommandDict(object):
+    """Docker Keyword Arguments Dictionary Builder"""
+    def __init__(self, options: ContainerOpts):
+        self.options = options
+        self.ret = dict()
 
-    Args:
-        options: Dictionary of options to be used with docker. (Typically fed
-                 from a YAML config file.
+    def build(self) -> dict:
+        """Builds the Keyword Dictionary to Send to docker-py
 
-    Returns:
-        A filled ContainerOpts information holder.
+        Returns:
+            dict: A dictionary of keyword arguments
+        """
+        self.ret['name'] = self.options.name
+        self.img_args()
+        self.mounts()
+        self.networking()
+        self.optional_attrs()
+        self.ports()
+        self.restart()
+        self.tmpfs()
 
-    Raises:
-        ConfigError: If type of data is incorrect or data is missing.
-   """
-    validated = ContainerOpts()
-    for key, value in validated.items():
-        if key in options:
-            data = options[key]
-            if isinstance(data, (bytes, str)):
-                data = fops.makestr(data)
-            if not isinstance(data, type(value)):
-                k_is = type(data).__name__
-                k_sb = type(value).__name__
-                err_s = VALIDATE_TE.format(key, k_is, k_sb)
-                raise ConfigError(err_s)
-            if data == '':
-                data = None
-            if isinstance(data, list):
-                count = 0
-                while count < len(data):
-                    if not isinstance(data[count], (bytes, str)):
-                        k_is = type(data[count]).__name__
-                        err_s = VALIDATE_TE_LIST.format(count, key, k_is)
-                        raise ConfigError(err_s)
-                    count += 1
-            validated[key] = data
+        return self.ret
 
-    if not validated.image:
-        raise ConfigError("'image' not defined in container options.")
-    if not validated.name:
-        raise ConfigError("'name' not defined in container options.")
+    def img_args(self):
+        """Adds arguments to send to docker image on startup"""
+        if self.options.image_args:
+            self.ret['command'] = self.options.image_args
 
-    return validated
+    def mounts(self):
+        """Add Volumes to Mount"""
+        if self.options.mounts:
+            volumes = list()
+
+            for vol in self.options.mounts:
+                host_path, cont_path, mode = None, None, None
+                if vol.count(':') == 1:
+                    host_path, cont_path = vol.split(':')
+                elif vol.count(':') == 2:
+                    host_path, cont_path, mode = vol.split(':')
+                else:
+                    raise ConfigError("Malformed Path: {0!s}".format(vol))
+
+                read_only = True if mode == 'ro' else False
+
+                mount = Mount(cont_path, host_path, type='bind', read_only=read_only, propagation='slave')
+                volumes.append(mount)
+
+            self.ret['mounts'] = volumes
+
+    def networking(self):
+        """Setup Networking"""
+        if self.options.network:
+            self.ret['network'] = self.options.network
+        elif self.options.net:
+            self.ret['network_mode'] = "container:{0!s}".format(self.options.net)
+
+    def optional_attrs(self):
+        """Add Optional Attributes"""
+        for attr in {'cap_add', 'cap_drop', 'devices', 'dns', 'environment'}:
+            data = getattr(self.options, attr)
+            if data:
+                self.ret[attr] = data
+
+    def ports(self):
+        """Add Port Maps"""
+        if self.options.ports:
+            ports = dict()
+            for port_group in self.options.ports:
+                host_port, cont_port = port_group.split(':')
+                ports[cont_port] = host_port
+            self.ret['ports'] = ports
+
+    def restart(self):
+        """Set Restart Policy"""
+        self.ret['restart_policy'] = {'Name': 'always'}
+        if self.options.restart:
+            self.ret['restart_policy']['Name'] = self.options.restart
+
+    def tmpfs(self):
+        """Adds tmpfs mounts"""
+        if self.options.tmpfs:
+            t_dict = {}
+            for i in self.options.tmpfs:
+                if ':' in i:
+                    t_var = i.split(':')
+                    t_dict[t_var[0]] = t_var[1]
+                else:
+                    t_dict[i] = ''
+
+            self.ret['tmpfs'] = t_dict
 
 
 class DockerContainer(object):
@@ -188,8 +196,7 @@ class DockerContainer(object):
         info: initialized ContainerOpts class (Required)
         image: initialized DockerImage class (Required)
     """
-    def __init__(self, client: docker.DockerClient, info: ContainerOpts,
-                 image: DockerImage) -> None:
+    def __init__(self, client: docker.DockerClient, info: ContainerOpts, image: DockerImage) -> None:
         self.__client = client
         self.__container = None
         self.info = info
@@ -246,11 +253,10 @@ class DockerContainer(object):
         if not self.image.exists():
             self.image.pull()
 
-        kw_args = _build_command_dict(self.info)
+        kw_args = _CommandDict(self.info).build()
         kw_args['detach'] = True
 
-        self.__container = self.__client.containers.run(self.info.image,
-                                                        **kw_args)
+        self.__container = self.__client.containers.run(self.info.image, **kw_args)
         LOGGER.debug("Ran container: %s", self.info.name)
 
     def restart(self) -> None:
@@ -293,11 +299,9 @@ class DockerContainers(object):
         config_path: Path to base of configuration directory
         groups: Initialized DockerGroups class (Not required)
     """
-    def __init__(self, client: docker.DockerClient, config_path: str,
-                 groups: DockerGroups = None) -> None:
+    def __init__(self, client: docker.DockerClient, config_path: str, groups: DockerGroups = None) -> None:
         self.__client = client
-        self.__config_path = os.path.join(os.path.abspath(config_path),
-                                          'containers')
+        self.__config_path = os.path.join(os.path.abspath(config_path), 'containers')
         fops.mkdir(self.__config_path)
         self.__containers = self.__list_defined()
         self.__groups = groups
@@ -327,7 +331,7 @@ class DockerContainers(object):
         file_d = fops.file_read_convert(container_def, 'YAML')
 
         LOGGER.debug("Validating container definition %s", container_def)
-        c_opts = validate_container_options(file_d)
+        c_opts = self.validate_container_options(file_d)
 
         if c_opts['name'] in self.__containers:
             err_s = "Container '{0!s}' already defined.".format(c_opts['name'])
@@ -335,23 +339,19 @@ class DockerContainers(object):
 
         if self.__groups and c_opts['group']:
             if c_opts['group'] not in self.__groups.list():
-                err_s = "Container definition for '{0!s}' contains " \
-                        "group that is not defined. " \
-                        "Add group first.".format(c_opts['name'])
+                err_s = _ERR_CONTAINER_UNDEF_GROUP.format(c_opts['name'])
                 raise ConfigError(err_s)
             g_info = self.__groups.get(c_opts['group'])
             if c_opts['name'] not in g_info.members:
                 g_info.members.append(c_opts['name'])
                 self.__groups.save()
 
-        file_p = os.path.join(self.__config_path,
-                              "{0!s}.yaml".format(c_opts['name']))
+        file_p = os.path.join(self.__config_path, "{0!s}.yaml".format(c_opts['name']))
         self.__containers[c_opts['name']] = file_p
 
         LOGGER.debug("Saving configuration for '%s'", c_opts['name'])
         out_dict = c_opts.to_dict()
-        for i in {'group', 'image_password', 'image_username', 'network',
-                  'restart'}:
+        for i in {'group', 'image_password', 'image_username', 'network', 'restart'}:
             if out_dict[i] is None:
                 out_dict[i] = ''
         fops.file_write_convert(file_p, 'YAML', out_dict)
@@ -372,17 +372,14 @@ class DockerContainers(object):
             raise DockerError(err_s.format(container_name))
 
         LOGGER.debug("Reading container info for %s", container_name)
-        file_d = fops.file_read_convert(self.__containers[container_name],
-                                        'YAML')
+        file_d = fops.file_read_convert(self.__containers[container_name], 'YAML')
 
         LOGGER.debug("Validating container info for %s", container_name)
-        container_info = validate_container_options(file_d)
+        container_info = self.validate_container_options(file_d)
 
         LOGGER.debug("Initializing image class for %s", container_name)
-        container_image = DockerImage(self.__client, container_info.image,
-                                      container_info.image_insecure,
-                                      container_info.image_username,
-                                      container_info.image_password)
+        container_image = DockerImage(self.__client, container_info.image, container_info.image_insecure,
+                                      container_info.image_username, container_info.image_password)
 
         return DockerContainer(self.__client, container_info, container_image)
 
@@ -393,3 +390,32 @@ class DockerContainers(object):
             A list of currently defined containers.
         """
         return [*self.__containers]
+
+    @staticmethod
+    def validate_container_options(options: dict) -> ContainerOpts:
+        """Validate incoming option types to provide base sanity
+
+        Args:
+            options: Dictionary of options to be used with docker. (Typically fed
+                     from a YAML config file.
+
+        Returns:
+            A filled ContainerOpts information holder.
+
+        Raises:
+            ConfigError: If type of data is incorrect or data is missing.
+       """
+        validated = ContainerOpts()
+        for key in validated.keys():
+            if key in options:
+                data = options[key]
+                if isinstance(data, (bytes, str)):
+                    data = fops.makestr(data)
+                validated.set_with_type(key, data)
+
+        if not validated.image:
+            raise ConfigError("'image' not defined in container options.")
+        if not validated.name:
+            raise ConfigError("'name' not defined in container options.")
+
+        return validated

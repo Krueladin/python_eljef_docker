@@ -37,14 +37,12 @@ C_LINE_ARGS = {
             '--define': {
                 'dest': 'container_define',
                 'metavar': 'CONTAINER_DEFINITION.YAML',
-                'help': 'Define a new container using specified YAML '
-                        'definition file.'
+                'help': 'Define a new container using specified YAML definition file.'
             },
             '--dump': {
                 'dest': 'container_dump',
                 'metavar': 'CONTAINER_NAME',
-                'help': 'Dumps a containers definition file to the current '
-                        'directory.'
+                'help': 'Dumps a containers definition file to the current directory.'
             },
             '--start': {
                 'dest': 'container_start',
@@ -59,14 +57,12 @@ C_LINE_ARGS = {
             '--update': {
                 'dest': 'container_update',
                 'metavar': 'CONTAINER_NAME',
-                'help': 'Update the specified containers image and rebuild '
-                        'the container.'
+                'help': 'Update the specified containers image and rebuild the container.'
             },
             '--list': {
                 'dest': 'containers_list',
                 'action': 'store_true',
-                'help': 'Returns a list of containers managed by the ElJef '
-                        'Docker software.'
+                'help': 'Returns a list of containers managed by the ElJef Docker software.'
             }
         }
     },
@@ -87,8 +83,7 @@ C_LINE_ARGS = {
             '--set-master': {
                 'dest': 'group_set_master',
                 'metavar': 'GROUP_NAME,MASTER_NAME',
-                'help': 'Sets the master for the specified group. (This must '
-                        'be comma separated group_name,master_name)'
+                'help': 'Sets the master for the specified group. (This must be comma separated group_name,master_name)'
             },
             '--restart': {
                 'dest': 'group_restart',
@@ -108,8 +103,7 @@ C_LINE_ARGS = {
             '--update': {
                 'dest': 'group_update',
                 'metavar': 'GROUP_NAME',
-                'help': 'Update all containers in the specified group and '
-                        'rebuild them.'
+                'help': 'Update all containers in the specified group and rebuild them.'
             },
             '--list': {
                 'dest': 'groups_list',

@@ -3,7 +3,7 @@
 
 import sys
 from setuptools import setup
-from eljef.docker.__version__ import version as ejd_version
+from eljef.docker.__version__ import VERSION as EJD_VERSION
 
 if sys.version_info[0] < 3:
     raise Exception('ElJef tools only support python version 3.6 or higher.')
@@ -19,12 +19,12 @@ setup(
             'eljef-docker = eljef.docker.cli.__main__:main'
         ]
     },
-    install_requires=['eljef_core>=0.0.10', 'docker>=3.1'],
+    install_requires=['eljef_core>=0.0.11', 'docker>=3.1'],
     license='LGPLv2.1',
     name='eljef_docker',
     packages=['eljef.docker', 'eljef.docker.cli'],
     python_requires='>=3.6',
     url='https://github.com/eljef/python_eljef_docker',
-    version=ejd_version,
+    version=EJD_VERSION,
     zip_safe=False,
 )

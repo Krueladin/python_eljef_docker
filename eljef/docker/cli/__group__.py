@@ -27,7 +27,7 @@ import logging
 import argparse
 
 from eljef.core.check import version_check
-from eljef.docker.cli.__vars__ import CONFIG_PATH, PROJECT_NAME
+from eljef.docker.cli.__vars__ import (CONFIG_PATH, PROJECT_NAME)
 from eljef.docker.containers import DockerContainer
 from eljef.docker.docker import Docker
 from eljef.docker.exceptions import DockerError
@@ -47,9 +47,7 @@ def _group_get(client: Docker, group_name: str) -> DockerGroup:
         raise SystemExit(-1)
 
 
-def _group_list(client: Docker,
-                group: DockerGroup) -> Tuple[DockerContainer,
-                                             List[DockerContainer]]:
+def _group_list(client: Docker, group: DockerGroup) -> Tuple[DockerContainer, List[DockerContainer]]:
     master = None
     if group.master:
         master = client.containers.get(group.master)
@@ -62,8 +60,7 @@ def _group_list(client: Docker,
     return master, containers
 
 
-def _group_start(master: Union[DockerContainer, None],
-                 containers: List[DockerContainer]) -> None:
+def _group_start(master: Union[DockerContainer, None], containers: List[DockerContainer]) -> None:
     update_s = "Starting new copy of container '%s'"
     if master:
         LOGGER.info(update_s, master.info.name)
@@ -73,9 +70,7 @@ def _group_start(master: Union[DockerContainer, None],
         container.start()
 
 
-def _group_stop(master: Union[DockerContainer, None],
-                containers: List[DockerContainer],
-                remove: bool = False) -> None:
+def _group_stop(master: Union[DockerContainer, None], containers: List[DockerContainer], remove: bool = False) -> None:
     update_s = "Shutting down container '{0!s}'"
     if remove:
         update_s = "Shutting down and removing container '%s'"
@@ -163,8 +158,7 @@ def group_start(group_name: str) -> None:
 
     LOGGER.info("Starting Containers Group: '%s'", group_name)
     _group_start(master, containers)
-    LOGGER.info("Finished updating and rebuilding members of group '%s'",
-                group_name)
+    LOGGER.info("Finished updating and rebuilding members of group '%s'", group_name)
 
 
 def group_stop(group_name: str) -> None:
@@ -205,8 +199,7 @@ def group_update(group_name: str) -> None:
 
     _group_start(master, containers)
 
-    LOGGER.info("Finished updating and rebuilding members of group '%s'",
-                group_name)
+    LOGGER.info("Finished updating and rebuilding members of group '%s'", group_name)
 
 
 def groups_list() -> None:

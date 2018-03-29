@@ -39,13 +39,11 @@ class DockerImage(object):
         client: Initialized DockerClient class (Required)
         image_name: Image name
         insecure_registry: Registry that image is in is insecure
-        username: Username for connecting to registry. If the username is
-                  defined, `password` is required.
+        username: Username for connecting to registry. If the username is defined, `password` is required.
         password: Password for connecting to registry
     """
-    def __init__(self, client: docker.DockerClient, image_name: str,
-                 insecure_registry: bool = False, username: str = None,
-                 password: str = None) -> None:
+    def __init__(self, client: docker.DockerClient, image_name: str, insecure_registry: bool = False,
+                 username: str = None, password: str = None) -> None:
         self.__args = self.__args_dict(insecure_registry, username, password)
         self.__client = client
         self.__image = image_name
@@ -54,8 +52,7 @@ class DockerImage(object):
             self.__image, self.__tag = image_name.rsplit(':', 1)
 
     @staticmethod
-    def __args_dict(insecure_registry: bool = False, username: str = None,
-                    password: str = None) -> dict:
+    def __args_dict(insecure_registry: bool = False, username: str = None, password: str = None) -> dict:
         kw_args = {'stream': True}
 
         if insecure_registry:
@@ -77,8 +74,7 @@ class DockerImage(object):
         LOGGER.debug("Searching for image '%s'", self.__image)
         try:
             t_image = self.__client.images.get(self.__image)
-            LOGGER.debug("Found image for '%s' with ID '%s'", self.__image,
-                         t_image.short_id)
+            LOGGER.debug("Found image for '%s' with ID '%s'", self.__image, t_image.short_id)
             return True
         except ImageNotFound as err:
             LOGGER.debug(err.explanation)

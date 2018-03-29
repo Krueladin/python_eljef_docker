@@ -25,8 +25,7 @@ import sys
 from eljef.core.applog import setup_app_logging
 from eljef.core.check import version_check
 from eljef.docker.cli.__opts__ import C_LINE_ARGS
-from eljef.docker.cli.__vars__ import (PROJECT_DESCRIPTION, PROJECT_NAME,
-                                       PROJECT_VERSION)
+from eljef.docker.cli.__vars__ import (PROJECT_DESCRIPTION, PROJECT_NAME, PROJECT_VERSION)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,10 +35,8 @@ version_check(3, 6)
 def main() -> None:
     """Main function"""
     parser = argparse.ArgumentParser(description=PROJECT_DESCRIPTION)
-    parser.add_argument('-d', '--debug', dest='debug_log', action='store_true',
-                        help='Enable debug output.')
-    parser.add_argument('-v', '--version', dest='version_out',
-                        action='store_true', help='Print version and exit.')
+    parser.add_argument('-d', '--debug', dest='debug_log', action='store_true', help='Enable debug output.')
+    parser.add_argument('-v', '--version', dest='version_out', action='store_true', help='Print version and exit.')
     subparsers = parser.add_subparsers(help='command help')
 
     for sub, opts in C_LINE_ARGS.items():
