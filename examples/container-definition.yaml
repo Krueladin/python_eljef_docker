@@ -119,3 +119,11 @@ restart: always
 #tmpfs:
 #- /tmp:size=3G,uid=1000
 #- /run
+
+# tag tags an image being built.
+# https://docs.docker.com/engine/reference/commandline/tag/
+# Same as to be specified to
+# docker build -t
+# Comment out to disable.
+# tag: user/tag
+# tag: tag

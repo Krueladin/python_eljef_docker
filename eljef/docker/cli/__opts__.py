@@ -33,35 +33,50 @@ C_LINE_ARGS = {
         'help': 'Operations to be performed on an individual containers.',
         'func': do_container,
         'ops': {
+            '--list': {
+                'dest': 'containers_list',
+                'action': 'store_true',
+                'help': 'Returns a list of containers managed by the ElJef Docker software.'
+            },
             '--define': {
                 'dest': 'container_define',
                 'metavar': 'CONTAINER_DEFINITION.YAML',
                 'help': 'Define a new container using specified YAML definition file.'
             },
+            '--name': {
+                'dest': 'container_name',
+                'metavar': 'CONTAINER_NAME',
+                'help': 'Container to perform action on.'
+            },
             '--dump': {
                 'dest': 'container_dump',
-                'metavar': 'CONTAINER_NAME',
+                'action': 'store_true',
                 'help': 'Dumps a containers definition file to the current directory.'
             },
             '--start': {
                 'dest': 'container_start',
-                'metavar': 'CONTAINER_NAME',
+                'action': 'store_true',
                 'help': 'Starts the defined container.'
+            },
+            '--stop': {
+                'dest': 'container_stop',
+                'action': 'store_true',
+                'help': "Stops the defined container."
             },
             '--restart': {
                 'dest': 'container_restart',
-                'metavar': 'CONTAINER_NAME',
+                'action': 'store_true',
                 'help': 'Restarts the defined container.'
             },
             '--update': {
                 'dest': 'container_update',
-                'metavar': 'CONTAINER_NAME',
+                'action': 'store_true',
                 'help': 'Update the specified containers image and rebuild the container.'
             },
-            '--list': {
-                'dest': 'containers_list',
-                'action': 'store_true',
-                'help': 'Returns a list of containers managed by the ElJef Docker software.'
+            '--tag': {
+                'dest': 'container_tag',
+                'metavar': 'IMAGE_TAG',
+                'help': 'Set or Update the tag for the specified containers image.'
             }
         }
     },

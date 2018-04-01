@@ -49,6 +49,14 @@ VALIDATE_TE_LIST = "Incorrect list contents: Value at position '{0!s}' in key '{
 _ERR_CONTAINER_UNDEF_GROUP = "Container definition for '{0!s}' contains group that is not defined. Add group first."
 
 
+def _save_container_file(container_name: str, file_path: str, out_dict: dict) -> None:
+    LOGGER.debug("Saving configuration for '%s'", container_name)
+    for i in {'group', 'image_password', 'image_username', 'net', 'network', 'restart', 'tag'}:
+        if out_dict[i] is None:
+            out_dict[i] = ''
+    fops.file_write_convert(file_path, 'YAML', out_dict)
+
+
 class ContainerOpts(DictObj):
     """Docker Container options class"""
     def __init__(self):
@@ -70,6 +78,7 @@ class ContainerOpts(DictObj):
         self.network = ''
         self.ports = []
         self.restart = ''
+        self.tag = ''
         self.tmpfs = []
 
     def set_with_type(self, key: Any, value: Any) -> None:
@@ -193,14 +202,18 @@ class DockerContainer(object):
 
     Args:
         client: Initialized DockerClient class (Required)
-        info: initialized ContainerOpts class (Required)
-        image: initialized DockerImage class (Required)
+        info: Initialized ContainerOpts class (Required)
+        image: Initialized DockerImage class (Required)
+
+    Keyword Args:
+        file_p: Path to container configuration file.
     """
-    def __init__(self, client: docker.DockerClient, info: ContainerOpts, image: DockerImage) -> None:
+    def __init__(self, client: docker.DockerClient, info: ContainerOpts, image: DockerImage, **kwargs) -> None:
         self.__client = client
         self.__container = None
         self.info = info
         self.image = image
+        self.file_p = kwargs.get('file_p', None)
 
     def __get(self):
         if not self.__container:
@@ -286,6 +299,18 @@ class DockerContainer(object):
         self.__container.stop()
         LOGGER.debug("Stopped container: %s", self.info.name)
 
+    def tag(self, img_tag: str) -> None:
+        """Set the tag for this containers image.
+
+        Args:
+            img_tag: Tag to set for this image.
+        """
+        LOGGER.debug("Setting tag for container: %s", self.info.name)
+        self.__get()
+        self.info.tag = img_tag
+        if self.file_p:
+            _save_container_file(self.info.name, self.file_p, self.info.to_dict())
+
     def update(self) -> None:
         """Updates the image for a container."""
         self.image.pull()
@@ -346,15 +371,9 @@ class DockerContainers(object):
                 g_info.members.append(c_opts['name'])
                 self.__groups.save()
 
-        file_p = os.path.join(self.__config_path, "{0!s}.yaml".format(c_opts['name']))
-        self.__containers[c_opts['name']] = file_p
+        self.__containers[c_opts['name']] = os.path.join(self.__config_path, "{0!s}.yaml".format(c_opts['name']))
 
-        LOGGER.debug("Saving configuration for '%s'", c_opts['name'])
-        out_dict = c_opts.to_dict()
-        for i in {'group', 'image_password', 'image_username', 'network', 'restart'}:
-            if out_dict[i] is None:
-                out_dict[i] = ''
-        fops.file_write_convert(file_p, 'YAML', out_dict)
+        _save_container_file(c_opts['name'], self.__containers[c_opts['name']], c_opts.to_dict())
 
         return c_opts.name
 
@@ -383,7 +402,7 @@ class DockerContainers(object):
                                       username=container_info.image_username,
                                       password=container_info.image_password)
 
-        return DockerContainer(self.__client, container_info, container_image)
+        return DockerContainer(self.__client, container_info, container_image, file_p=self.__containers[container_name])
 
     def list(self) -> list:
         """Returns a list of currently defined containers.

@@ -31,6 +31,36 @@ LOGGER = logging.getLogger(__name__)
 version_check(3, 6)
 
 
+def container_action(container_name: str, start: bool, stop: bool, restart: bool) -> None:
+    """Starts, Stops, or Restarts a defined container.
+
+    Args:
+        container_name: Name of container to start, stop, or restart.
+        start: If true, start the container.
+        stop: If true, stop the container.
+        restart: If true, restart the container
+    """
+    try:
+        client = Docker(CONFIG_PATH)
+        container = client.containers.get(container_name)
+    except DockerError as err:
+        LOGGER.error("Docker Error: %s", err.message)
+        raise SystemExit(-1)
+
+    if start:
+        run = ("Starting Container: %s", "Started Container: %s", container.start)
+    elif stop:
+        run = ("Stopping Container: %s", "Stopped Container: %s", container.stop)
+    elif restart:
+        run = ("Restarting Container: %s", "Restarted Container: %s", container.restart)
+    else:
+        raise DockerError("must specify start, stop, or restart")
+
+    LOGGER.info(run[0], container_name)
+    run[2]()
+    LOGGER.info(run[1], container_name)
+
+
 def container_define(definition_file: str) -> None:
     """Define a new container
 
@@ -68,41 +98,6 @@ def container_dump(container_name: str) -> None:
         raise SystemExit(1)
 
 
-def container_restart(container_name: str) -> None:
-    """Restarts a defined container.
-
-    Args:
-        container_name: Name of container to start.
-    """
-    LOGGER.info("Restarting Container: '%s'", container_name)
-    try:
-        client = Docker(CONFIG_PATH)
-        container = client.containers.get(container_name)
-        container.restart()
-        LOGGER.info("Restarted Container: '%s'", container_name)
-    except DockerError as err:
-        LOGGER.error("Docker Error: %s", err.message)
-        raise SystemExit(-1)
-
-
-def container_start(container_name: str) -> None:
-    """Starts a defined container.
-
-    Args:
-        container_name: Name of container to start.
-    """
-    LOGGER.info("Starting Container: '%s'", container_name)
-
-    try:
-        client = Docker(CONFIG_PATH)
-        container = client.containers.get(container_name)
-        container.start()
-        LOGGER.info("Started Container: '%s'", container_name)
-    except DockerError as err:
-        LOGGER.error("Docker Error: %s", err.message)
-        raise SystemExit(-1)
-
-
 def container_update(container_name: str) -> None:
     """Updates a containers image and rebuilds the container.
 
@@ -117,6 +112,25 @@ def container_update(container_name: str) -> None:
         container.update()
         container.rebuild()
         LOGGER.info("Updated Container: %s", container_name)
+    except DockerError as err:
+        LOGGER.error("Docker Error: %s", err.message)
+        raise SystemExit(-1)
+
+
+def container_tag(container_name: str, image_tag: str) -> None:
+    """Sets or Updates a containers image tag.
+
+    Args:
+        container_name: Name of container to tag image of.
+        image_tag: Image tag to set.
+    """
+    LOGGER.info("Setting tag '%s' for Container: %s", image_tag, container_name)
+
+    try:
+        client = Docker(CONFIG_PATH)
+        container = client.containers.get(container_name)
+        container.tag(image_tag)
+        LOGGER.info("Tagged Container: %s", container_name)
     except DockerError as err:
         LOGGER.error("Docker Error: %s", err.message)
         raise SystemExit(-1)
@@ -137,18 +151,22 @@ def containers_list() -> None:
 # noinspection PyUnresolvedReferences
 def do_container(args: argparse.Namespace) -> None:
     """Runs container operations"""
-    if args.container_define:
-        container_define(args.container_define)
-    elif args.container_dump:
-        container_dump(args.container_dump)
-    elif args.container_start:
-        container_start(args.container_start)
-    elif args.container_restart:
-        container_restart(args.container_restart)
-    elif args.container_update:
-        container_update(args.container_update)
-    elif args.containers_list:
+    if args.containers_list:
         containers_list()
+    elif args.container_define:
+        container_define(args.container_define)
+    elif args.container_name:
+        if args.container_dump:
+            container_dump(args.container_name)
+        elif args.container_start or args.container_stop or args.container_restart:
+            container_action(args.container_name, args.container_start, args.container_stop, args.container_restart)
+        elif args.container_update:
+            container_update(args.container_name)
+        elif args.container_tag:
+            container_tag(args.container_name, args.container_tag)
+        else:
+            LOGGER.error("You must specify an action for --name. Try %s container --help", PROJECT_NAME)
+            raise SystemExit(1)
     else:
         LOGGER.error("You must specify an action. Try %s container --help", PROJECT_NAME)
         raise SystemExit(1)
