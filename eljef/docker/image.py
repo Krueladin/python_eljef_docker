@@ -39,14 +39,21 @@ class DockerImage(object):
         image_name: Image name
 
     Keyword Args:
-        insecure_registry: Registry that image is in is insecure
-        username: Username for connecting to registry. If the username is defined, `password` is required.
-        password: Password for connecting to registry
+        build_path (str): Path to directory containing Dockerfile.
+                          For images to be built locally.
+        build_squash (bool): Squash the build image. (Remove intermediate layers.)
+        insecure_registry (bool): Registry that image is in is insecure
+        username (str): Username for connecting to registry. If the username is defined, `password` is required.
+        password (str): Password for connecting to registry
     """
     def __init__(self, client: docker.DockerClient, image_name: str, **kwargs) -> None:
         self.__args = self.__args_dict(kwargs.get('insecure_registry', False),
                                        kwargs.get('username', None),
                                        kwargs.get('password', None))
+        self.__build_args = {'path': kwargs.get('build_path', None),
+                             'pull': True,
+                             'rm': kwargs.get('build_squash', True),
+                             'squash': kwargs.get('build_squash', True)}
         self.__client = client
         self.__image = image_name
         self.__tag = 'latest'
@@ -67,6 +74,34 @@ class DockerImage(object):
 
         return kw_args
 
+    @staticmethod
+    def __log_build_pull(line: str) -> None:
+        r_data = json.loads(line)
+        log_line = ''
+        if 'id' in r_data:
+            log_line += "ID: {0!s} | ".format(r_data['id'])
+        if 'status' in r_data:
+            log_line += "{0!s}".format(r_data['status'])
+        elif 'stream' in r_data:
+            log_line += "{0!s}".format(r_data['stream'].strip())
+        LOGGER.debug(log_line)
+
+    def _build(self) -> None:
+        """Build a local image."""
+        LOGGER.debug("Building image - %s:%s:%s", self.__build_args['path'], self.__image, self.__tag)
+
+        build = self.__client.api.build
+        for line in build(**self.__build_args, tag=self.__tag):
+            self.__log_build_pull(line)
+
+    def _pull(self) -> None:
+        """Pull an image from a registry."""
+        LOGGER.debug("Pulling image - %s:%s", self.__image, self.__tag)
+
+        pull = self.__client.api.pull
+        for line in pull(self.__image, tag=self.__tag, **self.__args):
+            self.__log_build_pull(line)
+
     def exists(self) -> bool:
         """Determines if the containers image exists on the system.
 
@@ -83,14 +118,8 @@ class DockerImage(object):
             return False
 
     def pull(self) -> None:
-        """Pull an image from a registry."""
-        LOGGER.debug("Pulling image - %s:%s", self.__image, self.__tag)
-
-        pull = self.__client.api.pull
-        for line in pull(self.__image, tag=self.__tag, **self.__args):
-            r_data = json.loads(line)
-            log_line = ''
-            if 'id' in r_data:
-                log_line += "ID: {0!s} | ".format(r_data['id'])
-            log_line += "{0!s}".format(r_data['status'])
-            LOGGER.debug(log_line)
+        """Pull or Build an Image."""
+        if not self.__build_args['path']:
+            self._pull()
+        else:
+            self._build()

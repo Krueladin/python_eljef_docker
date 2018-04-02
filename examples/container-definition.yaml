@@ -69,6 +69,17 @@ image: repo/image
 # image.
 # image_password: password
 
+# The image build path is the path to a folder that contains a Dockerfile for
+# building an image to use. Do not specify the Dockerfile itself.
+# Note:
+# If you specify image_build_path, you must specify tag. (See Below.)
+# This does not support multi-stage builds.
+# image_build_path: /path/to/folder
+
+# Disable removal intermediate layers from the image and squashing the image.
+# https://docs.docker.com/engine/reference/commandline/image_build/#options
+# image_build_squash: false
+
 # A list of volumes to add to the docker image
 # https://docs.docker.com/engine/reference/commandline/run/#options
 # These should be specified the same way they would specified to

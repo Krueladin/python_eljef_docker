@@ -51,7 +51,7 @@ _ERR_CONTAINER_UNDEF_GROUP = "Container definition for '{0!s}' contains group th
 
 def _save_container_file(container_name: str, file_path: str, out_dict: dict) -> None:
     LOGGER.debug("Saving configuration for '%s'", container_name)
-    for i in {'group', 'image_password', 'image_username', 'net', 'network', 'restart', 'tag'}:
+    for i in {'group', 'image_password', 'image_username', 'image_build_path', 'net', 'network', 'restart', 'tag'}:
         if out_dict[i] is None:
             out_dict[i] = ''
     fops.file_write_convert(file_path, 'YAML', out_dict)
@@ -72,6 +72,8 @@ class ContainerOpts(DictObj):
         self.image_insecure = False
         self.image_password = ''
         self.image_username = ''
+        self.image_build_path = ''
+        self.image_build_squash = True
         self.mounts = []
         self.name = ''
         self.net = ''
@@ -398,6 +400,8 @@ class DockerContainers(object):
 
         LOGGER.debug("Initializing image class for %s", container_name)
         container_image = DockerImage(self.__client, container_info.image,
+                                      build_path=container_info.image_build_path,
+                                      build_squash=container_info.image_build_squash,
                                       insecure_registry=container_info.image_insecure,
                                       username=container_info.image_username,
                                       password=container_info.image_password)
