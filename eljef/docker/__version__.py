@@ -1,3 +1,3 @@
 # -*- coding: UTF-8 -*-
 """ElJef Docker Version"""
-VERSION = '0.0.9'
+VERSION = '0.0.10'

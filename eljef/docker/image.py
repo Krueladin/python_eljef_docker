@@ -50,9 +50,8 @@ class DockerImage(object):
         self.__args = self.__args_dict(kwargs.get('insecure_registry', False),
                                        kwargs.get('username', None),
                                        kwargs.get('password', None))
-        self.__build_args = {'path': kwargs.get('build_path', None),
-                             'pull': True,
-                             'squash': kwargs.get('build_squash', False)}
+        self.__build_path = kwargs.get('build_path', None)
+        self.__build_squash = kwargs.get('build_squash', False)
         self.__client = client
         self.__image = image_name
         self.__tag = 'latest'
@@ -87,10 +86,10 @@ class DockerImage(object):
 
     def _build(self) -> None:
         """Build a local image."""
-        LOGGER.debug("Building image - %s:%s:%s", self.__build_args['path'], self.__image, self.__tag)
+        LOGGER.debug("Building image - %s:%s:%s", self.__build_path, self.__image, self.__tag)
 
         build = self.__client.api.build
-        for line in build(**self.__build_args, tag=self.__tag):
+        for line in build(path=self.__build_path, tag=self.__tag, rm=True, pull=True, squash=self.__build_squash):
             self.__log_build_pull(line)
 
     def _pull(self) -> None:
@@ -118,7 +117,7 @@ class DockerImage(object):
 
     def pull(self) -> None:
         """Pull or Build an Image."""
-        if not self.__build_args['path']:
+        if not self.__build_path:
             self._pull()
         else:
             self._build()

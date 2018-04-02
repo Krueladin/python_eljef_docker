@@ -20,8 +20,8 @@ project = 'ElJef Docker'
 copyright = '2018, Jef Oliver'
 author = 'Jef Oliver'
 
-version = '0.0.9'
-release = '0.0.9'
+version = '0.0.10'
+release = '0.0.10'
 
 language = None
 
