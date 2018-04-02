@@ -24,7 +24,7 @@ import sys
 
 from eljef.core.applog import setup_app_logging
 from eljef.core.check import version_check
-from eljef.docker.cli.__opts__ import C_LINE_ARGS
+from eljef.docker.cli.__opts__ import (C_LINE_ARGS, C_LINE_GROUPS)
 from eljef.docker.cli.__vars__ import (PROJECT_DESCRIPTION, PROJECT_NAME, PROJECT_VERSION)
 
 LOGGER = logging.getLogger(__name__)
@@ -35,11 +35,12 @@ version_check(3, 6)
 def main() -> None:
     """Main function"""
     parser = argparse.ArgumentParser(description=PROJECT_DESCRIPTION)
-    parser.add_argument('-d', '--debug', dest='debug_log', action='store_true', help='Enable debug output.')
-    parser.add_argument('-v', '--version', dest='version_out', action='store_true', help='Print version and exit.')
+    for a_dict in C_LINE_ARGS:
+        parser.add_argument(a_dict['short'], a_dict['long'], **a_dict['opts'])
+
     subparsers = parser.add_subparsers(help='command help')
 
-    for sub, opts in C_LINE_ARGS.items():
+    for sub, opts in C_LINE_GROUPS.items():
         sub_parser = subparsers.add_parser(sub, help=opts['help'])
         for op_name, args in opts['ops'].items():
             sub_parser.add_argument(op_name, **args)
@@ -54,7 +55,7 @@ def main() -> None:
     setup_app_logging(args.debug_log)
 
     has_sub = False
-    for sub in C_LINE_ARGS:
+    for sub in C_LINE_GROUPS:
         if sub in sys.argv:
             has_sub = True
             break

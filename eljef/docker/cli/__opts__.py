@@ -28,7 +28,28 @@ LOGGER = logging.getLogger(__name__)
 
 version_check(3, 6)
 
-C_LINE_ARGS = {
+C_LINE_ARGS = [
+    {
+        'short': '-d',
+        'long': '--debug',
+        'opts': {
+            'dest': 'debug_log',
+            'action': 'store_true',
+            'help': 'Enable debug output.'
+        }
+    },
+    {
+        'short': '-v',
+        'long': '--version',
+        'opts': {
+            'dest': 'version_out',
+            'action': 'store_true',
+            'help': 'Print version and exit.'
+        }
+    }
+]
+
+C_LINE_GROUPS = {
     'container': {
         'help': 'Operations to be performed on an individual containers.',
         'func': do_container,
