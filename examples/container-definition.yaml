@@ -76,9 +76,9 @@ image: repo/image
 # This does not support multi-stage builds.
 # image_build_path: /path/to/folder
 
-# Disable removal intermediate layers from the image and squashing the image.
+# Enable squashing the image.
 # https://docs.docker.com/engine/reference/commandline/image_build/#options
-# image_build_squash: false
+# image_build_squash: true
 
 # A list of volumes to add to the docker image
 # https://docs.docker.com/engine/reference/commandline/run/#options

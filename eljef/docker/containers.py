@@ -73,7 +73,7 @@ class ContainerOpts(DictObj):
         self.image_password = ''
         self.image_username = ''
         self.image_build_path = ''
-        self.image_build_squash = True
+        self.image_build_squash = False
         self.mounts = []
         self.name = ''
         self.net = ''

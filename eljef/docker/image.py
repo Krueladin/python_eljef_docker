@@ -52,8 +52,7 @@ class DockerImage(object):
                                        kwargs.get('password', None))
         self.__build_args = {'path': kwargs.get('build_path', None),
                              'pull': True,
-                             'rm': kwargs.get('build_squash', True),
-                             'squash': kwargs.get('build_squash', True)}
+                             'squash': kwargs.get('build_squash', False)}
         self.__client = client
         self.__image = image_name
         self.__tag = 'latest'
