@@ -161,7 +161,8 @@ class _CommandDict(object):
         if self.options.network:
             self.ret['network'] = self.options.network
         elif self.options.net:
-            self.ret['network_mode'] = "container:{0!s}".format(self.options.net)
+            self.ret['network_mode'] = \
+                'host' if self.options.net == 'host' else "container:{0!s}".format(self.options.net)
 
     def optional_attrs(self):
         """Add Optional Attributes"""
