@@ -24,6 +24,6 @@ setup(
     packages=['eljef.docker', 'eljef.docker.cli'],
     python_requires='>=3.6',
     url='https://github.com/eljef/python_eljef_docker',
-    version='0.0.10',
+    version='0.0.11',
     zip_safe=False,
 )
